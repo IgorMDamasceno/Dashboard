@@ -1,0 +1,270 @@
+/***** CONFIGURAÇÃO BÁSICA *****/
+const PRICES_API = {
+  // Altere para o host correto do seu backend (SEM barra final)
+  // Ex.: 'https://my.spun.com.br' ou 'https://api.seudominio.com'
+  baseUrl: 'https://my.spun.com.br',
+  endpoint: '/api/prices/update',
+  // Nome das colunas esperadas na LINHA 1 (case-insensitive)
+  headersExpected: ['dominio', 'utm_source', 'url', 'bloco', 'company_id', 'price_rule'],
+  // Colunas de status que o script criará/atualizará
+  statusCols: ['RESULT', 'MESSAGE', 'HTTP_CODE', 'RAW_RESPONSE', 'UPDATED_AT'],
+  // Nº máximo de tentativas em caso de falha transitória
+  maxRetries: 3,
+  // Pausa base (ms) para backoff exponencial: 1000, 2000, 4000...
+  baseDelayMs: 1000,
+};
+
+/***** MENU *****/
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Prices API')
+    .addItem('Definir token da API', 'setApiToken')
+    .addSeparator()
+    .addItem('Atualizar preços (API)', 'updatePricesFromActiveSheet')
+    .addToUi();
+}
+
+/***** SALVAR TOKEN EM PROPRIEDADES DO SCRIPT *****/
+function setApiToken() {
+  const ui = SpreadsheetApp.getUi();
+  const res = ui.prompt('Token da API', 'Cole aqui o valor do header Authorization:', ui.ButtonSet.OK_CANCEL);
+  if (res.getSelectedButton() === ui.Button.OK) {
+    const token = res.getResponseText().trim();
+    if (!token) {
+      ui.alert('Token vazio. Tente novamente.');
+      return;
+    }
+    PropertiesService.getScriptProperties().setProperty('PRICES_API_TOKEN', token);
+    ui.alert('Token salvo com sucesso!');
+  }
+}
+
+/***** FUNÇÃO PRINCIPAL *****/
+function updatePricesFromActiveSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getActiveSheet();
+  const token = PropertiesService.getScriptProperties().getProperty('PRICES_API_TOKEN');
+
+  if (!token) {
+    SpreadsheetApp.getUi().alert('Defina o token primeiro: Menu "Prices API" → "Definir token da API".');
+    return;
+  }
+
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  if (values.length < 2) {
+    Logger.log('Sem dados (apenas cabeçalho encontrado).');
+    return;
+  }
+
+  // Mapeia cabeçalhos (linha 1)
+  const headerRow = values[0].map(h => String(h || '').trim());
+  const headerIndex = indexHeaders(headerRow, PRICES_API.headersExpected);
+
+  // Garante colunas de status
+  const statusIndex = ensureStatusColumns(sheet, headerRow);
+
+  // Processa linhas (a partir da 2)
+  const updates = [];
+  for (let r = 1; r < values.length; r++) {
+    const row = values[r];
+
+    const dominio    = getField(row, headerIndex, 'dominio');
+    const url        = getField(row, headerIndex, 'url');
+    const company_id = getField(row, headerIndex, 'company_id');
+    const price_rule = getField(row, headerIndex, 'price_rule');
+
+    // Campos opcionais
+    const utm_source = getField(row, headerIndex, 'utm_source');
+    const bloco      = getField(row, headerIndex, 'bloco');
+
+    // Validação mínima (obrigatórios do endpoint)
+    if (!dominio || !url || !company_id || !price_rule) {
+      writeStatusRow(sheet, r + 1, statusIndex, {
+        RESULT: 'SKIPPED',
+        MESSAGE: 'Faltam campos obrigatórios (dominio, url, company_id, price_rule)',
+        HTTP_CODE: '',
+        RAW_RESPONSE: '',
+      });
+      continue;
+    }
+
+    // Monta payload
+    const payload = {
+      dominio: String(dominio),
+      url: String(url),
+      company_id: toInt(company_id),
+      price_rule: String(price_rule),
+    };
+    if (utm_source) payload.utm_source = String(utm_source);
+    if (bloco) payload.bloco = String(bloco);
+
+    updates.push({ rowNumber: r + 1, payload });
+  }
+
+  if (!updates.length) {
+    Logger.log('Nada para enviar.');
+    return;
+  }
+
+  // Executa chamadas com retry
+  const results = [];
+  for (const item of updates) {
+    const res = callPricesUpdateWithRetry(token, item.payload);
+    results.push({ rowNumber: item.rowNumber, ...res });
+  }
+
+  // Escreve resultados
+  for (const res of results) {
+    writeStatusRow(sheet, res.rowNumber, statusIndex, {
+      RESULT: res.ok ? 'OK' : 'ERROR',
+      MESSAGE: res.message || '',
+      HTTP_CODE: res.httpCode || '',
+      RAW_RESPONSE: res.raw || '',
+    });
+  }
+
+  SpreadsheetApp.getUi().alert(`Concluído. Sucesso: ${results.filter(r => r.ok).length} | Erros: ${results.filter(r => !r.ok).length}`);
+}
+
+/***** CHAMADA À API COM RETRY *****/
+function callPricesUpdateWithRetry(token, payload) {
+  const url = PRICES_API.baseUrl.replace(/\/$/, '') + PRICES_API.endpoint;
+
+  let attempt = 0;
+  while (attempt < PRICES_API.maxRetries) {
+    attempt++;
+    try {
+      const resp = UrlFetchApp.fetch(url, {
+        method: 'post',
+        contentType: 'application/json',
+        muteHttpExceptions: true,
+        payload: JSON.stringify(payload),
+        headers: {
+          // A documentação pede "Authorization" com o SEU token de acesso
+          // Se sua API exigir "Bearer <token>", salve já no formato "Bearer <token>" no menu.
+          Authorization: token,
+        },
+      });
+
+      const httpCode = resp.getResponseCode();
+      const raw = resp.getContentText() || '';
+      let json;
+      try { json = raw ? JSON.parse(raw) : null; } catch (e) {}
+
+      // Sucesso (200 OK)
+      if (httpCode === 200 && json && json.success === true) {
+        return { ok: true, httpCode, raw, message: json.message || 'Preço atualizado com sucesso.' };
+      }
+
+      // Erros conhecidos da doc (400/401/500) — já paramos o retry para 400/401
+      if (httpCode === 400 || httpCode === 401) {
+        const msg = extractErrorMessage(json) || `Erro ${httpCode}`;
+        return { ok: false, httpCode, raw, message: msg };
+      }
+
+      // Para 5xx, tentamos retry
+      if (httpCode >= 500) {
+        if (attempt < PRICES_API.maxRetries) {
+          Utilities.sleep(PRICES_API.baseDelayMs * Math.pow(2, attempt - 1));
+          continue;
+        }
+        const msg = extractErrorMessage(json) || `Erro ${httpCode} após ${attempt} tentativas.`;
+        return { ok: false, httpCode, raw, message: msg };
+      }
+
+      // Outros códigos — tratamos como erro sem retry
+      const msg = extractErrorMessage(json) || `Erro HTTP ${httpCode}`;
+      return { ok: false, httpCode, raw, message: msg };
+
+    } catch (err) {
+      // Erros de rede/parse — retry até estourar
+      if (attempt < PRICES_API.maxRetries) {
+        Utilities.sleep(PRICES_API.baseDelayMs * Math.pow(2, attempt - 1));
+        continue;
+      }
+      return { ok: false, httpCode: '', raw: String(err), message: `Falha de conexão/execução: ${err}` };
+    }
+  }
+  return { ok: false, httpCode: '', raw: '', message: 'Falha desconhecida.' };
+}
+
+/***** HELPERS *****/
+function indexHeaders(headerRow, expected) {
+  const map = {};
+  const lower = headerRow.map(h => h.toString().trim().toLowerCase());
+  expected.forEach(key => {
+    map[key] = lower.indexOf(key.toLowerCase());
+  });
+  return map; // { dominio: 0, utm_source: 1, ... }
+}
+
+function ensureStatusColumns(sheet, headerRow) {
+  const existing = headerRow.slice(); // cópia
+  const needed = PRICES_API.statusCols.filter(c => !existing.includes(c));
+  if (needed.length) {
+    // Anexa novas colunas de status ao fim
+    sheet.getRange(1, existing.length + 1, 1, needed.length).setValues([needed]);
+    existing.push(...needed);
+  }
+  // Recalcula índices após possível inserção
+  const allHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const index = {};
+  allHeaders.forEach((h, i) => { index[h] = i; });
+  // Retorna índices 1-based (col) para escrita rápida
+  return {
+    RESULT: index['RESULT'] + 1,
+    MESSAGE: index['MESSAGE'] + 1,
+    HTTP_CODE: index['HTTP_CODE'] + 1,
+    RAW_RESPONSE: index['RAW_RESPONSE'] + 1,
+    UPDATED_AT: index['UPDATED_AT'] + 1,
+  };
+}
+
+function writeStatusRow(sheet, rowNumber, statusIndex, data) {
+  const now = new Date();
+  if (statusIndex.RESULT)      sheet.getRange(rowNumber, statusIndex.RESULT).setValue(data.RESULT || '');
+  if (statusIndex.MESSAGE)     sheet.getRange(rowNumber, statusIndex.MESSAGE).setValue(truncateStr(data.MESSAGE || '', 500));
+  if (statusIndex.HTTP_CODE)   sheet.getRange(rowNumber, statusIndex.HTTP_CODE).setValue(data.HTTP_CODE || '');
+  if (statusIndex.RAW_RESPONSE)sheet.getRange(rowNumber, statusIndex.RAW_RESPONSE).setValue(truncateStr(data.RAW_RESPONSE || '', 2000));
+  if (statusIndex.UPDATED_AT)  sheet.getRange(rowNumber, statusIndex.UPDATED_AT).setValue(now);
+}
+
+function getField(row, headerIndex, name) {
+  const idx = headerIndex[name];
+  if (idx === -1) return '';
+  return row[idx];
+}
+
+function toInt(v) {
+  if (v === null || v === undefined || v === '') return '';
+  const n = parseInt(String(v).replace(/\D+/g, ''), 10);
+  return isNaN(n) ? '' : n;
+}
+
+function truncateStr(s, maxLen) {
+  s = String(s);
+  return s.length > maxLen ? s.slice(0, maxLen - 1) + '…' : s;
+}
+
+function extractErrorMessage(json) {
+  // Tenta extrair mensagens padronizadas da doc (message + data)
+  try {
+    if (!json) return '';
+    if (json.message && typeof json.message === 'string') {
+      // Se houver detalhes em data, agrega
+      if (json.data && typeof json.data === 'object') {
+        const parts = [];
+        for (const k in json.data) {
+          const arr = json.data[k];
+          if (Array.isArray(arr) && arr.length) {
+            parts.push(`${k}: ${arr.join('; ')}`);
+          }
+        }
+        if (parts.length) return `${json.message} — ${parts.join(' | ')}`;
+      }
+      return json.message;
+    }
+  } catch (e) {}
+  return '';
+}
