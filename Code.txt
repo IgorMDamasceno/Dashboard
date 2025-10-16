@@ -21,7 +21,7 @@ const HEADER_MAP = {
   cpc: 'CPC',
   viewability: 'Viewability',
 };
-const CONFIG_HEADERS = ['ID','Pessoa','Operação','PaginaQueda','Parte','Canal','URLs (;)','Rede'];
+const CONFIG_HEADERS = ['ID','Pessoa','Operação','PaginaQueda','Parte','Canal','URLs (;)','Rede','Moeda'];
 
 function doGet() {
   return HtmlService.createTemplateFromFile('index')
@@ -48,7 +48,26 @@ function ensureConfigSheet_() {
     sh = ss.insertSheet(CONFIG_SHEET);
     sh.getRange(1,1,1,CONFIG_HEADERS.length).setValues([CONFIG_HEADERS]);
     sh.setFrozenRows(1);
+    return sh;
   }
+
+  var lastCol = sh.getLastColumn();
+  if (lastCol < CONFIG_HEADERS.length) {
+    sh.insertColumnsAfter(lastCol, CONFIG_HEADERS.length - lastCol);
+    lastCol = CONFIG_HEADERS.length;
+  }
+  var currentHeaders = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+  var needsUpdate = false;
+  for (var i = 0; i < CONFIG_HEADERS.length; i++) {
+    if (currentHeaders[i] !== CONFIG_HEADERS[i]) {
+      needsUpdate = true;
+      break;
+    }
+  }
+  if (needsUpdate) {
+    sh.getRange(1, 1, 1, CONFIG_HEADERS.length).setValues([CONFIG_HEADERS]);
+  }
+
   return sh;
 }
 
@@ -95,6 +114,16 @@ function toNumber_(val) {
   var n = parseFloat(s);
   return isNaN(n) ? 0 : n;
 }
+
+function formatPriceRuleIgoal_(value) {
+  if (value === null || value === undefined) return '';
+  var s = String(value).trim();
+  if (!s) return '';
+  s = s.replace(/,/g, '.');
+  var n = parseFloat(s);
+  if (isNaN(n)) return '';
+  return n.toFixed(2);
+}
 function normUrlStrict_(u) {
   if (!u) return '';
   var s = String(u).trim().toLowerCase();
@@ -136,7 +165,12 @@ function getConfig() {
         parte: String(r[idx['Parte']] || '').trim(),
         canal: String(r[idx['Canal']] || '').trim(),
         urls: String(r[idx['URLs (;)']] || '').split(';').map(normUrlStrict_).filter(Boolean),
-        rede: String(r[idx['Rede']] || '').trim()
+        rede: String(r[idx['Rede']] || '').trim(),
+        moeda: (function(){
+          var moedaIdx = idx['Moeda'];
+          var moedaVal = moedaIdx != null ? String(r[moedaIdx] || '').trim().toUpperCase() : '';
+          return moedaVal || 'USD';
+        })()
       });
     }
   });
@@ -167,14 +201,14 @@ function upsertConfig(row) {
   if (row.id) {
     for (var i = 1; i < range.length; i++) {
       if (String(range[i][idx['ID']] || '').trim() === String(row.id).trim()) {
-        var values = [ row.id, row.pessoa, row.operacao, row.pagina, row.parte, row.canal, row.urls, row.rede ];
+        var values = [ row.id, row.pessoa, row.operacao, row.pagina, row.parte, row.canal, row.urls, row.rede, row.moeda || 'USD' ];
         sh.getRange(i + 1, 1, 1, values.length).setValues([values]);
-        return { ok: true }; 
+        return { ok: true };
       }
     }
   }
-  
-  var newValues = [ Utilities.getUuid(), row.pessoa, row.operacao, row.pagina, row.parte, row.canal, row.urls, row.rede ];
+
+  var newValues = [ Utilities.getUuid(), row.pessoa, row.operacao, row.pagina, row.parte, row.canal, row.urls, row.rede, row.moeda || 'USD' ];
   sh.appendRow(newValues);
   return { ok: true };
 }
@@ -268,7 +302,7 @@ function getPricingRulesIgoal_() {
       url: row[idx['url']],
       bloco: row[idx['bloco']],
       company_id: row[idx['company_id']],
-      price_rule: row[idx['price_rule']]
+      price_rule: formatPriceRuleIgoal_(row[idx['price_rule']])
     };
   });
 }
@@ -290,6 +324,9 @@ function upsertPricingRulesIgoal(rules) {
   var updatedRules = [];
 
   rules.forEach(function(rule) {
+    var formattedPrice = formatPriceRuleIgoal_(rule.price_rule);
+    rule.price_rule = formattedPrice;
+
     if (!rule.rule_id) {
       rule.rule_id = new Date().getTime() + Math.floor(Math.random() * 1000);
       var rowValuesNew = [rule.rule_id, rule.dominio, rule.utm_source, rule.url, rule.bloco, rule.company_id, rule.price_rule, 'Sim'];
@@ -330,7 +367,7 @@ function getDashboardData(params) {
   cfgAll.forEach(r => {
     if (paginasSelecionadas.includes(r.pagina)) {
       if (!pageIndex[r.pagina]) pageIndex[r.pagina] = {};
-      pageIndex[r.pagina][r.parte] = { canal: r.canal, urls: r.urls, rede: r.rede };
+      pageIndex[r.pagina][r.parte] = { canal: r.canal, urls: r.urls, rede: r.rede, moeda: r.moeda };
     }
   });
   var baseSh = getBaseSheet_();

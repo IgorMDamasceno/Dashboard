@@ -171,18 +171,38 @@
                   <option>ActiveView</option>
               </select>
           </div>
+          <div>
+              <label class="block text-sm text-slate-400 mb-1">Moeda</label>
+              <select id="cfg-moeda" class="w-full pill rounded-lg px-3 py-2">
+                  <option value="USD" selected>USD</option>
+                  <option value="BRL">BRL</option>
+              </select>
+          </div>
           <div class="md:col-span-4 flex gap-2"><button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-xl" id="btn-salvar">Salvar</button><button type="button" class="pill px-4 py-2 rounded-xl" id="btn-limpar">Limpar</button></div>
         </form>
       </div>
       <div class="card rounded-2xl p-6">
         <h3 class="text-base font-bold text-slate-100 mb-3">Itens Configurados</h3>
-        <div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left font-semibold py-2 px-2">Pessoa</th><th class="text-left font-semibold py-2 px-2">Operação</th><th class="text-left font-semibold py-2 px-2">Página</th><th class="text-left font-semibold py-2 px-2">Parte</th><th class="text-left font-semibold py-2 px-2">Canal</th><th class="text-left font-semibold py-2 px-2">URLs</th><th class="text-left font-semibold py-2 px-2">Rede</th><th class="text-left font-semibold py-2 px-2">Ações</th></tr></thead><tbody id="cfg-list" class="align-top"></tbody></table></div>
+        <div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left font-semibold py-2 px-2">Pessoa</th><th class="text-left font-semibold py-2 px-2">Operação</th><th class="text-left font-semibold py-2 px-2">Página</th><th class="text-left font-semibold py-2 px-2">Parte</th><th class="text-left font-semibold py-2 px-2">Canal</th><th class="text-left font-semibold py-2 px-2">URLs</th><th class="text-left font-semibold py-2 px-2">Rede</th><th class="text-left font-semibold py-2 px-2">Moeda</th><th class="text-left font-semibold py-2 px-2">Ações</th></tr></thead><tbody id="cfg-list" class="align-top"></tbody></table></div>
       </div>
     </section>
   </div>
   
   <div id="toast-container"></div>
-  
+
+  <div id="currency-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
+    <div class="card w-full max-w-md rounded-2xl p-6 text-slate-200 border border-amber-500/40 bg-slate-900/80">
+      <h3 class="text-lg font-semibold text-amber-300 mb-3">Atenção com a moeda</h3>
+      <p id="currency-modal-message" class="text-sm text-slate-300">
+        A precificação desse site deverá ser feita em Real, portanto, converta os valores para Real antes de fazer a precificação.
+      </p>
+      <div class="mt-6 flex justify-end gap-3">
+        <button id="currency-modal-cancel" type="button" class="pill px-4 py-2 rounded-xl text-sm">Cancelar</button>
+        <button id="currency-modal-accept" type="button" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-4 py-2 rounded-xl text-sm">Entendi</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     function byId(s){ return document.getElementById(s); }
     function num(n, d){ if(d===undefined) d=2; return (n==null?0:n).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}); }
@@ -190,11 +210,55 @@
     function money(n, d){ if(d===undefined) d=2; return '$'+num(n,d); }
     function escapeHtml(str){ return String(str==null?'':str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+    var CurrencyModal = { element: null, acceptButton: null, cancelButton: null, onAccept: null };
+
+    function setupCurrencyModal(){
+        CurrencyModal.element = byId('currency-modal');
+        CurrencyModal.acceptButton = byId('currency-modal-accept');
+        CurrencyModal.cancelButton = byId('currency-modal-cancel');
+        if (CurrencyModal.acceptButton) {
+            CurrencyModal.acceptButton.onclick = function(){
+                var cb = CurrencyModal.onAccept;
+                hideCurrencyModal();
+                if (typeof cb === 'function') cb();
+            };
+        }
+        if (CurrencyModal.cancelButton) {
+            CurrencyModal.cancelButton.onclick = hideCurrencyModal;
+        }
+        if (CurrencyModal.element) {
+            CurrencyModal.element.addEventListener('click', function(evt){
+                if (evt.target === CurrencyModal.element) hideCurrencyModal();
+            });
+        }
+    }
+
+    function showCurrencyModal(onAccept){
+        if (!CurrencyModal.element) setupCurrencyModal();
+        CurrencyModal.onAccept = onAccept;
+        if (CurrencyModal.element) CurrencyModal.element.classList.remove('hidden');
+    }
+
+    function hideCurrencyModal(){
+        if (CurrencyModal.element) CurrencyModal.element.classList.add('hidden');
+        CurrencyModal.onAccept = null;
+    }
+
     function getPricingSortState(network){
         if(!PRICING_SORT[network]){
             PRICING_SORT[network] = { by: 'urlPath', dir: 'asc', lastBlockId: null };
         }
         return PRICING_SORT[network];
+    }
+
+    function ensureTwoDecimals(value){
+        if (value === null || value === undefined) return '';
+        var normalized = String(value).trim();
+        if (!normalized) return '';
+        normalized = normalized.replace(/,/g,'.');
+        var num = parseFloat(normalized);
+        if (isNaN(num)) return '';
+        return num.toFixed(2);
     }
 
     function extractUtmSource(canal){
@@ -285,7 +349,14 @@
       document.addEventListener('click', function(e){ if (!byId('pq-select').contains(e.target)) { PQ.open = false; byId('pq-panel').classList.add('hidden'); } });
     }
     function resetPQ(){ setPQOptions([]); }
-    function setPQOptions(arr){ PQ.options = (arr||[]).slice(); PQ.selected = []; updatePQSummary(); }
+    function setPQOptions(arr){
+      PQ.options = (arr||[]).slice();
+      PQ.selected = [];
+      updatePQSummary();
+      var search = byId('pq-search');
+      if (search) search.value = '';
+      if (byId('pq-options-list')) updatePQOptionsList('');
+    }
     function updatePQSummary(){ var len=PQ.selected.length; var sum = len===0 ? '— selecione —' : (len===1 ? PQ.selected[0] : PQ.selected.slice(0,2).join(', ')+(len>2?' +'+(len-2):'')); byId('pq-summary').textContent = sum; }
     
     function renderPQOptions(){
@@ -332,8 +403,10 @@
     }
     
     function updatePQOptionsList(filterValue) {
-      filterValue = (filterValue === undefined ? (byId('pq-search')?.value || '') : filterValue).toLowerCase();
+      var searchInput = byId('pq-search');
+      filterValue = (filterValue === undefined ? ((searchInput && searchInput.value) || '') : filterValue).toLowerCase();
       var listContainer = byId('pq-options-list');
+      if (!listContainer) return;
       var visibleOptions = PQ.options.filter(function(x){return !filterValue || String(x).toLowerCase().includes(filterValue);});
       
       listContainer.innerHTML = visibleOptions.map(function(pg){ 
@@ -640,6 +713,8 @@
         const safeNetwork = escapeHtml(network || '');
         const safePageAttr = escapeHtml(pageName);
         const safePartAttr = escapeHtml(partData.parte);
+        const currencyValue = (partData.meta && partData.meta.moeda ? String(partData.meta.moeda).toUpperCase() : 'USD');
+        const safeCurrency = escapeHtml(currencyValue);
         const buttonLabel = network === 'Igoal' ? 'Precificar (Igoal)' : 'Precificar (AdSeleto)';
         const buttonColor = network === 'Igoal' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-sky-600 hover:bg-sky-500';
         const borderColor = network === 'Igoal' ? 'border-emerald-500/30' : 'border-sky-500/30';
@@ -648,7 +723,7 @@
             <button type="button" class="${buttonColor} text-white text-sm font-semibold px-4 py-2 rounded-xl w-full" onclick="togglePricingCard('${pricingBlockId}')">
               ${buttonLabel}
             </button>
-            <div id="${pricingBlockId}" data-network="${safeNetwork}" data-page="${safePageAttr}" data-part="${safePartAttr}" class="hidden mt-3 card rounded-xl p-4 bg-slate-900/70 ${borderColor}">
+            <div id="${pricingBlockId}" data-network="${safeNetwork}" data-page="${safePageAttr}" data-part="${safePartAttr}" data-currency="${safeCurrency}" class="hidden mt-3 card rounded-xl p-4 bg-slate-900/70 ${borderColor}">
             </div>
           </div>
         `;
@@ -680,7 +755,7 @@
         return state.dir === 'asc' ? ' ▲' : ' ▼';
     }
 
-    function togglePricingCard(blockId, forceRerender = false) {
+    function togglePricingCard(blockId, forceRerender = false, skipCurrencyCheck = false) {
         const card = byId(blockId);
         if (!card) return;
 
@@ -689,6 +764,12 @@
         sortState.lastBlockId = blockId;
 
         const isHidden = card.classList.contains('hidden');
+        const currency = (card.dataset.currency || '').toUpperCase();
+
+        if (!skipCurrencyCheck && currency === 'BRL' && isHidden) {
+            showCurrencyModal(function(){ togglePricingCard(blockId, forceRerender, true); });
+            return;
+        }
 
         if (isHidden || forceRerender) {
             const pageName = card.dataset.page || '';
@@ -819,7 +900,7 @@
                             urlPath: path,
                             unit: unit,
                             utm_source: utmSourceValue,
-                            price_rule: existingRule ? existingRule.price_rule : '',
+                            price_rule: ensureTwoDecimals(existingRule ? existingRule.price_rule : ''),
                             company_id: existingRule ? existingRule.company_id : ''
                         });
                     });
@@ -950,8 +1031,11 @@
 
             const rulesPayload = [];
             rows.forEach(row => {
-                const price_rule = row.querySelector('[name=price_rule]').value;
-                if (price_rule) {
+                const priceInput = row.querySelector('[name=price_rule]');
+                if (!priceInput) return;
+                const formattedPrice = ensureTwoDecimals(priceInput.value);
+                if (formattedPrice) {
+                    priceInput.value = formattedPrice;
                     rulesPayload.push({
                         rule_id: row.querySelector('[name=rule_id]').value,
                         dominio: row.querySelector('[name=dominio]').value,
@@ -959,7 +1043,7 @@
                         url: row.querySelector('[name=url]').value,
                         bloco: row.querySelector('[name=bloco]').value,
                         company_id: companyId,
-                        price_rule: price_rule
+                        price_rule: formattedPrice
                     });
                 }
             });
@@ -972,6 +1056,7 @@
                     const updatedRules = res.rules || [];
                     updatedRules.forEach(newRule => {
                         if (!newRule.company_id) newRule.company_id = companyId;
+                        newRule.price_rule = ensureTwoDecimals(newRule.price_rule);
                         const index = (LAST_RES.pricingRulesIgoal || []).findIndex(r => String(r.rule_id) === String(newRule.rule_id));
                         if (index > -1) { LAST_RES.pricingRulesIgoal[index] = newRule; }
                         else { LAST_RES.pricingRulesIgoal.push(newRule); }
@@ -999,7 +1084,7 @@
 
     function renderCfgTable(rows){
       var tb=byId('cfg-list');
-      tb.innerHTML=rows.map(function(r){return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60 align-top"><td class="py-2 px-2">'+r.pessoa+'</td><td class="py-2 px-2">'+r.operacao+'</td><td class="py-2 px-2">'+r.pagina+'</td><td class="py-2 px-2">'+r.parte+'</td><td class="py-2 px-2">'+r.canal+'</td><td class="py-2 px-2">'+(r.urls||[]).join('; ')+'</td><td class="py-2 px-2">'+(r.rede||'-')+'</td>'+
+      tb.innerHTML=rows.map(function(r){return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60 align-top"><td class="py-2 px-2">'+r.pessoa+'</td><td class="py-2 px-2">'+r.operacao+'</td><td class="py-2 px-2">'+r.pagina+'</td><td class="py-2 px-2">'+r.parte+'</td><td class="py-2 px-2">'+r.canal+'</td><td class="py-2 px-2">'+(r.urls||[]).join('; ')+'</td><td class="py-2 px-2">'+(r.rede||'-')+'</td><td class="py-2 px-2">'+(r.moeda||'USD')+'</td>'+
       '<td class="py-2 px-2 whitespace-nowrap"><button type="button" class="text-sky-400 hover:text-sky-300 text-xs font-semibold mr-3" onclick="editCfgItem(\''+r.id+'\')">Editar</button><button type="button" class="text-rose-400 hover:text-rose-300 text-xs font-semibold" onclick="deleteCfgItem(\''+r.id+'\')">Apagar</button></td></tr>';}).join('');
     }
 
@@ -1014,6 +1099,7 @@
         byId('cfg-canal').value = item.canal;
         byId('cfg-urls').value = (item.urls || []).join(';');
         byId('cfg-rede').value = item.rede || '';
+        byId('cfg-moeda').value = item.moeda || 'USD';
         byId('cfg-pessoa').focus();
     }
 
@@ -1027,12 +1113,12 @@
     }
 
     function wireCfgForm(){
-      byId('btn-limpar').onclick=function(){byId('cfg-id').value='';byId('cfg-pessoa').value='';byId('cfg-operacao').value='';byId('cfg-pagina').value='';byId('cfg-parte').value='P1';byId('cfg-canal').value='';byId('cfg-urls').value=''; byId('cfg-rede').value='';};
+      byId('btn-limpar').onclick=function(){byId('cfg-id').value='';byId('cfg-pessoa').value='';byId('cfg-operacao').value='';byId('cfg-pagina').value='';byId('cfg-parte').value='P1';byId('cfg-canal').value='';byId('cfg-urls').value=''; byId('cfg-rede').value=''; byId('cfg-moeda').value='USD';};
       byId('form-cfg').onsubmit = function(e){
         e.preventDefault();
-        var payload={id:byId('cfg-id').value,pessoa:(byId('cfg-pessoa').value||'').trim(),operacao:(byId('cfg-operacao').value||'').trim(),pagina:(byId('cfg-pagina').value||'').trim(),parte:(byId('cfg-parte').value||'').trim(),canal:(byId('cfg-canal').value||'').trim(),urls:(byId('cfg-urls').value||'').trim(),rede:(byId('cfg-rede').value||'').trim()};
+        var payload={id:byId('cfg-id').value,pessoa:(byId('cfg-pessoa').value||'').trim(),operacao:(byId('cfg-operacao').value||'').trim(),pagina:(byId('cfg-pagina').value||'').trim(),parte:(byId('cfg-parte').value||'').trim(),canal:(byId('cfg-canal').value||'').trim(),urls:(byId('cfg-urls').value||'').trim(),rede:(byId('cfg-rede').value||'').trim(),moeda:(byId('cfg-moeda').value||'USD').trim().toUpperCase()};
         if(!payload.pessoa||!payload.operacao||!payload.pagina||!payload.parte){ showToast('Preencha Pessoa, Operação, Página e Parte.', 'error'); return; }
-        
+
         google.script.run.withSuccessHandler(function(){
             showToast('Configuração salva com sucesso!', 'success');
             byId('btn-limpar').click();
@@ -1041,7 +1127,7 @@
       };
     }
 
-    document.addEventListener('DOMContentLoaded', function(){ loadConfig(); wirePQ(); wireFilters(); wireCfgForm(); });
+    document.addEventListener('DOMContentLoaded', function(){ loadConfig(); wirePQ(); wireFilters(); wireCfgForm(); setupCurrencyModal(); });
 </script>
 </body>
 </html>
