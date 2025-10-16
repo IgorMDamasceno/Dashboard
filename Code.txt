@@ -2,6 +2,7 @@
 
 const CONFIG_SHEET = 'Config - Operações';
 const PRICING_SHEET_ADSELETO = 'Precificação - AdSeleto';
+const PRICING_SHEET_IGOAL = 'Precificação - Igoal';
 const BASE_SHEET_CANDIDATES = ['Base de Dados','Base de Dados - Exemplo','BD - GAM','BD - GAM1'];
 const PART_ORDER = ['Quiz','P1','P2'];
 const HEADER_MAP = {
@@ -58,6 +59,19 @@ function ensurePricingSheetAdSeleto_() {
     sh = ss.insertSheet(PRICING_SHEET_ADSELETO);
     sh.getRange(1, 1, 1, 7).setValues([
       ['spnprice_id', 'domain_id', 'price_rule', 'utm_source', 'slot_id', 'url', 'Sincronizar']
+    ]);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function ensurePricingSheetIgoal_() {
+  const ss = SpreadsheetApp.getActive();
+  var sh = ss.getSheetByName(PRICING_SHEET_IGOAL);
+  if (!sh) {
+    sh = ss.insertSheet(PRICING_SHEET_IGOAL);
+    sh.getRange(1, 1, 1, 8).setValues([
+      ['rule_id', 'dominio', 'utm_source', 'url', 'bloco', 'company_id', 'price_rule', 'Sincronizar']
     ]);
     sh.setFrozenRows(1);
   }
@@ -240,13 +254,75 @@ function upsertPricingRulesAdSeleto(rules) {
   return { ok: true, rules: updatedRules };
 }
 
+function getPricingRulesIgoal_() {
+  var sh = ensurePricingSheetIgoal_();
+  var values = sh.getDataRange().getValues();
+  var headers = values.shift() || [];
+  if (!headers.length) return [];
+  var idx = getHeaderIndexMap_(headers);
+  return values.map(function(row) {
+    return {
+      rule_id: row[idx['rule_id']],
+      dominio: row[idx['dominio']],
+      utm_source: row[idx['utm_source']],
+      url: row[idx['url']],
+      bloco: row[idx['bloco']],
+      company_id: row[idx['company_id']],
+      price_rule: row[idx['price_rule']]
+    };
+  });
+}
+
+function upsertPricingRulesIgoal(rules) {
+  if (!rules || !rules.length) {
+    return { ok: false, message: 'Nenhuma regra para salvar.' };
+  }
+  var sh = ensurePricingSheetIgoal_();
+  var range = sh.getDataRange();
+  var values = range.getValues();
+  var headers = values[0] || [];
+  var idx = getHeaderIndexMap_(headers);
+  var syncColumnIndex = headers.indexOf('Sincronizar') + 1;
+  if (syncColumnIndex === 0) {
+    throw new Error("A coluna 'Sincronizar' não foi encontrada na aba de precificação da Igoal.");
+  }
+
+  var updatedRules = [];
+
+  rules.forEach(function(rule) {
+    if (!rule.rule_id) {
+      rule.rule_id = new Date().getTime() + Math.floor(Math.random() * 1000);
+      var rowValuesNew = [rule.rule_id, rule.dominio, rule.utm_source, rule.url, rule.bloco, rule.company_id, rule.price_rule, 'Sim'];
+      sh.appendRow(rowValuesNew);
+    } else {
+      var found = false;
+      for (var i = 1; i < values.length; i++) {
+        if (String(values[i][idx['rule_id']]) === String(rule.rule_id)) {
+          var rowValues = [rule.rule_id, rule.dominio, rule.utm_source, rule.url, rule.bloco, rule.company_id, rule.price_rule];
+          sh.getRange(i + 1, 1, 1, rowValues.length).setValues([rowValues]);
+          sh.getRange(i + 1, syncColumnIndex).setValue('Sim');
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        var rowValuesAppend = [rule.rule_id, rule.dominio, rule.utm_source, rule.url, rule.bloco, rule.company_id, rule.price_rule, 'Sim'];
+        sh.appendRow(rowValuesAppend);
+      }
+    }
+    updatedRules.push(rule);
+  });
+
+  return { ok: true, rules: updatedRules };
+}
+
 /* ============= DASHBOARD ============= */
 function getDashboardData(params) {
   params = params || {};
   var pessoa = params.pessoa, operacao = params.operacao, paginasSelecionadas = params.paginasSelecionadas || [],
       startDate = params.startDate, endDate = params.endDate, granularity = params.granularity || 'hour';
   var gran = (granularity === 'day' || granularity === 'last6h') ? granularity : 'hour';
-  var emptyReturn = { pages: [], compare: [], compareBlocks: [], granularity: gran, seriesChart: [], labelsChart: [], seriesChartByBlock: {}, pricingRulesAdSeleto: [] };
+  var emptyReturn = { pages: [], compare: [], compareBlocks: [], granularity: gran, seriesChart: [], labelsChart: [], seriesChartByBlock: {}, pricingRulesAdSeleto: [], pricingRulesIgoal: [] };
   if (!pessoa || !operacao || !paginasSelecionadas.length) return emptyReturn;
 
   var cfgAll = getConfig().rows.filter(r => r.pessoa === pessoa && r.operacao === operacao);
@@ -495,6 +571,7 @@ function getDashboardData(params) {
   compare.sort((a,b) => b.revenue - a.revenue);
   compareBlocks.sort((a,b) => (a.parte > b.parte) ? 1 : (a.parte < b.parte) ? -1 : (a.page > b.page) ? 1 : (a.page < b.page) ? -1 : b.metrics.revenue - a.metrics.revenue);
   var pricingRulesAdSeleto = getPricingRulesAdSeleto_();
-  
-  return { pages, compare, compareBlocks, granularity: gran, seriesChart, labelsChart, seriesChartByBlock, pricingRulesAdSeleto: pricingRulesAdSeleto };
+  var pricingRulesIgoal = getPricingRulesIgoal_();
+
+  return { pages, compare, compareBlocks, granularity: gran, seriesChart, labelsChart, seriesChartByBlock, pricingRulesAdSeleto: pricingRulesAdSeleto, pricingRulesIgoal: pricingRulesIgoal };
 }

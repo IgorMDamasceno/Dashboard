@@ -66,10 +66,14 @@
             <p class="text-slate-400 mt-1">Visualize o fluxo <b>Quiz → P1 → P2</b> por <i>Página de Queda</i> e compare os resultados.</p>
           </div>
         </div>
-        <div>
+        <div class="flex flex-wrap gap-3">
           <button id="btn-sync-adseleto" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-xl shadow-lg shadow-indigo-900/50 transition-all duration-300 flex items-center gap-2">
             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a.75.75 0 01.75.75v1.313a.75.75 0 01-1.5 0V3.75A.75.75 0 0110 3zM10 15a.75.75 0 01.75.75v1.313a.75.75 0 01-1.5 0V15.75A.75.75 0 0110 15zM5.334 6.406a.75.75 0 011.06 0l.93.931a.75.75 0 11-1.06 1.06l-.93-.931a.75.75 0 010-1.06zM12.676 13.748a.75.75 0 011.06 0l.93.931a.75.75 0 11-1.06 1.06l-.93-.931a.75.75 0 010-1.06zM3 10a.75.75 0 01.75-.75h1.313a.75.75 0 010 1.5H3.75A.75.75 0 013 10zm12 0a.75.75 0 01.75-.75h1.313a.75.75 0 010 1.5H15.75a.75.75 0 01-.75-.75zm-7.735-4.656a.75.75 0 010-1.06l.93-.931a.75.75 0 011.06 1.06l-.93.931a.75.75 0 01-1.06 0zM13.748 12.676a.75.75 0 010-1.06l.93-.931a.75.75 0 011.06 1.06l-.93.931a.75.75 0 01-1.06 0zM10 7a3 3 0 100 6 3 3 0 000-6z" /></svg>
-            Sincronizar Precificação
+            Sincronizar Precificação PMD
+          </button>
+          <button id="btn-sync-igoal" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-xl shadow-lg shadow-emerald-900/50 transition-all duration-300 flex items-center gap-2">
+            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2.5 10a7.5 7.5 0 1114.474 2.474l.89.89a.75.75 0 11-1.06 1.06l-.89-.89A7.5 7.5 0 012.5 10zm7.5-6a6 6 0 100 12 6 6 0 000-12zm.75 3.75a.75.75 0 00-1.5 0v2.5c0 .199.079.39.22.53l1.75 1.75a.75.75 0 101.06-1.06l-1.53-1.53V7.75z"/></svg>
+            Sincronizar Precificação Igoal
           </button>
         </div>
       </div>
@@ -184,11 +188,44 @@
     function num(n, d){ if(d===undefined) d=2; return (n==null?0:n).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}); }
     function pct(n, d){ if(d===undefined) d=1; return num(n,d)+'%'; }
     function money(n, d){ if(d===undefined) d=2; return '$'+num(n,d); }
+    function escapeHtml(str){ return String(str==null?'':str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+    function getPricingSortState(network){
+        if(!PRICING_SORT[network]){
+            PRICING_SORT[network] = { by: 'urlPath', dir: 'asc', lastBlockId: null };
+        }
+        return PRICING_SORT[network];
+    }
+
+    function extractUtmSource(canal){
+        if(!canal) return '';
+        var normalized = String(canal).replace(/;/g,'&');
+        var match = normalized.match(/utm_source=([^&]+)/i);
+        if(match) return decodeURIComponent(match[1].replace(/\+/g,' '));
+        if(normalized.indexOf('=') === -1) return normalized;
+        var parts = normalized.split('=');
+        return decodeURIComponent(parts.pop().replace(/\+/g,' '));
+    }
+
+    function parseDomainAndPath(rawUrl){
+        if(!rawUrl) return { domain: '', path: '' };
+        var input = String(rawUrl).trim();
+        if(!/^https?:\/\//i.test(input)) input = 'https://' + input;
+        try {
+            var parsed = new URL(input);
+            var path = parsed.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+            return { domain: parsed.hostname.toLowerCase(), path: path };
+        } catch(err) {
+            var parts = String(rawUrl).split('/');
+            var domain = parts.shift() || '';
+            return { domain: domain.toLowerCase(), path: parts.join('/').replace(/^\/+/, '').replace(/\/+$/, '') };
+        }
+    }
 
     var CFG = { rows: [], pessoas: [], opsByPessoa: {}, paginasByOp: {} };
     var LAST_RES = null;
     var SORT = { by: 'revenue', dir: 'desc' };
-    var PRICING_SORT = { by: 'url', dir: 'asc', lastBlockId: null };
+    var PRICING_SORT = {};
     var PQ = { options: [], selected: [], open:false };
     var CHART = { inst: null };
 
@@ -326,26 +363,33 @@
         google.script.run.withSuccessHandler(renderDashboard).getDashboardData(params);
       };
       
-      byId('btn-sync-adseleto').onclick = function() {
-        var btn = this;
-        var originalContent = btn.innerHTML;
-        btn.innerHTML = 'Sincronizando...';
-        btn.disabled = true;
+      function wireSyncButton(id, runner) {
+        var btn = byId(id);
+        if (!btn) return;
+        btn.onclick = function() {
+          var originalContent = btn.innerHTML;
+          btn.innerHTML = 'Sincronizando...';
+          btn.disabled = true;
 
-        const callbackHandler = function(response, isSuccess) {
-            try {
-                if (isSuccess) { showToast(response.message, response.ok ? 'success' : 'error'); } 
-                else { showToast('Erro de comunicação com o servidor:\n' + response.message, 'error'); }
-            } finally {
-                btn.innerHTML = originalContent;
-                btn.disabled = false;
-            }
+          const callbackHandler = function(response, isSuccess) {
+              try {
+                  if (isSuccess) { showToast(response.message, response.ok ? 'success' : 'error'); }
+                  else { showToast('Erro de comunicação com o servidor:\n' + response.message, 'error'); }
+              } finally {
+                  btn.innerHTML = originalContent;
+                  btn.disabled = false;
+              }
+          };
+
+          google.script.run
+              .withSuccessHandler(function(res) { callbackHandler(res, true); })
+              .withFailureHandler(function(err) { callbackHandler(err, false); })
+              [runner]();
         };
-        google.script.run
-            .withSuccessHandler(function(res) { callbackHandler(res, true); })
-            .withFailureHandler(function(err) { callbackHandler(err, false); })
-            .runAdSeletoPricingUpdate();
-      };
+      }
+
+      wireSyncButton('btn-sync-adseleto', 'runAdSeletoPricingUpdate');
+      wireSyncButton('btn-sync-igoal', 'runIgoalPricingUpdate');
     }
 
     function toggleSort(k) {
@@ -440,6 +484,8 @@
     
     function renderDashboard(res){
       LAST_RES = res;
+      LAST_RES.pricingRulesAdSeleto = res.pricingRulesAdSeleto || [];
+      LAST_RES.pricingRulesIgoal = res.pricingRulesIgoal || [];
       var hostA = byId('analysis-content'), hostC = byId('compare-content');
       hostA.innerHTML = ''; hostC.innerHTML = '';
       var hourly = (res.granularity === 'hour' || res.granularity === 'last6h');
@@ -588,141 +634,271 @@
       }
 
       var pricingHtml = '';
-      if (network === 'AdSeleto' && suggestionsHtml) {
+      var allowPricing = (network === 'AdSeleto' || network === 'Igoal');
+      if (allowPricing && suggestionsHtml) {
         const pricingBlockId = `pricing-${pageName.replace(/[\s/]/g, '-')}-${partData.parte}`;
+        const safeNetwork = escapeHtml(network || '');
+        const safePageAttr = escapeHtml(pageName);
+        const safePartAttr = escapeHtml(partData.parte);
+        const buttonLabel = network === 'Igoal' ? 'Precificar (Igoal)' : 'Precificar (AdSeleto)';
+        const buttonColor = network === 'Igoal' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-sky-600 hover:bg-sky-500';
+        const borderColor = network === 'Igoal' ? 'border-emerald-500/30' : 'border-sky-500/30';
         pricingHtml = `
           <div class="mt-4">
-            <button type="button" class="bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-xl w-full" onclick="togglePricingCard('${pricingBlockId}')">
-              Precificar
+            <button type="button" class="${buttonColor} text-white text-sm font-semibold px-4 py-2 rounded-xl w-full" onclick="togglePricingCard('${pricingBlockId}')">
+              ${buttonLabel}
             </button>
-            <div id="${pricingBlockId}" class="hidden mt-3 card rounded-xl p-4 bg-slate-900/70 border-sky-500/30">
-              </div>
+            <div id="${pricingBlockId}" data-network="${safeNetwork}" data-page="${safePageAttr}" data-part="${safePartAttr}" class="hidden mt-3 card rounded-xl p-4 bg-slate-900/70 ${borderColor}">
+            </div>
           </div>
         `;
       }
-      
+
       if (suggestionsHtml) {
         container.innerHTML = '<div class="card rounded-xl p-4 space-y-3 bg-slate-900/50 border-blue-500/30"><h4 class="text-base font-bold text-slate-100">Sugestões de Precificação</h4>'+suggestionsHtml+'</div>' + pricingHtml;
       } else {
         container.innerHTML = '';
       }
     }
-    
-    window.togglePricingSort = function(key) {
-        if (PRICING_SORT.by === key) {
-            PRICING_SORT.dir = PRICING_SORT.dir === 'asc' ? 'desc' : 'asc';
+
+    window.togglePricingSort = function(network, key) {
+        var state = getPricingSortState(network);
+        if (state.by === key) {
+            state.dir = state.dir === 'asc' ? 'desc' : 'asc';
         } else {
-            PRICING_SORT.by = key;
-            PRICING_SORT.dir = 'asc';
+            state.by = key;
+            state.dir = key === 'price_rule' ? 'desc' : 'asc';
         }
-        if (PRICING_SORT.lastBlockId) {
-            togglePricingCard(PRICING_SORT.lastBlockId, true);
+        if (state.lastBlockId) {
+            togglePricingCard(state.lastBlockId, true);
         }
     }
 
-    function pricingSortIndicator(key) {
-        if (PRICING_SORT.by !== key) return '';
-        return PRICING_SORT.dir === 'asc' ? ' ▲' : ' ▼';
+    function pricingSortIndicator(network, key) {
+        var state = getPricingSortState(network);
+        if (state.by !== key) return '';
+        return state.dir === 'asc' ? ' ▲' : ' ▼';
     }
 
     function togglePricingCard(blockId, forceRerender = false) {
         const card = byId(blockId);
         if (!card) return;
 
-        PRICING_SORT.lastBlockId = blockId;
+        const network = card.dataset.network || 'AdSeleto';
+        const sortState = getPricingSortState(network);
+        sortState.lastBlockId = blockId;
+
         const isHidden = card.classList.contains('hidden');
 
         if (isHidden || forceRerender) {
-            const [_, page, part] = blockId.split('-');
-            const pgData = LAST_RES.pages.find(p => p.page.replace(/[\s/]/g, '-') === page);
-            const partData = pgData.parts.find(p => p.parte === part);
+            const pageName = card.dataset.page || '';
+            const partName = card.dataset.part || '';
+            const pgData = (LAST_RES.pages || []).find(p => p.page === pageName);
+            if (!pgData) { card.innerHTML = '<p class="text-sm text-rose-300">Página não encontrada.</p>'; return; }
+            const partData = (pgData.parts || []).find(p => p.parte === partName);
+            if (!partData) { card.innerHTML = '<p class="text-sm text-rose-300">Parte não encontrada.</p>'; return; }
 
-            const utm_source = partData.meta.canal || '';
-            const configuredUrls = partData.meta.urls || [];
-            const adUnits = [...new Set(partData.details.map(d => d.adunit))];
+            if (network === 'AdSeleto') {
+                const utm_source = partData.meta.canal || '';
+                const configuredUrls = partData.meta.urls || [];
+                const adUnits = [...new Set(partData.details.map(d => d.adunit))];
+                const existingRules = LAST_RES.pricingRulesAdSeleto || [];
 
-            let pmd_id = '';
-            const combinations = [];
+                let pmd_id = '';
+                const combinations = [];
+                const seen = new Set();
 
-            configuredUrls.forEach(url => {
-                const urlPath = url.split('/').pop() || url;
-                adUnits.forEach(unit => {
-                    const existingRule = (LAST_RES.pricingRulesAdSeleto || []).find(r => 
-                        r.utm_source === utm_source && r.slot_id === unit && r.url === urlPath
-                    );
-                    if (existingRule && existingRule.domain_id) pmd_id = existingRule.domain_id;
+                configuredUrls.forEach(url => {
+                    const urlPath = url.split('/').pop() || url;
+                    adUnits.forEach(unit => {
+                        const key = `${urlPath}||${unit}||${utm_source}`;
+                        if (seen.has(key)) return;
+                        seen.add(key);
+                        const existingRule = existingRules.find(r =>
+                            r.utm_source === utm_source && r.slot_id === unit && r.url === urlPath
+                        );
+                        if (existingRule && existingRule.domain_id) pmd_id = existingRule.domain_id;
 
-                    combinations.push({
-                        urlPath: urlPath,
-                        unit: unit,
-                        utm_source: utm_source,
-                        spnprice_id: existingRule ? existingRule.spnprice_id : '',
-                        price_rule: existingRule ? existingRule.price_rule : ''
+                        combinations.push({
+                            urlPath: urlPath,
+                            unit: unit,
+                            utm_source: utm_source,
+                            spnprice_id: existingRule ? existingRule.spnprice_id : '',
+                            price_rule: existingRule ? existingRule.price_rule : ''
+                        });
                     });
                 });
-            });
 
-            combinations.sort((a, b) => {
-                const key = PRICING_SORT.by;
-                const dir = PRICING_SORT.dir === 'asc' ? 1 : -1;
-                let valA = a[key];
-                let valB = b[key];
-                
-                if (key === 'price_rule') {
-                    valA = parseFloat(valA) || 0;
-                    valB = parseFloat(valB) || 0;
-                } else {
-                    valA = String(valA || '').toLowerCase();
-                    valB = String(valB || '').toLowerCase();
-                }
+                combinations.sort(function(a, b) {
+                    const key = sortState.by;
+                    const dir = sortState.dir === 'asc' ? 1 : -1;
+                    let valA = a[key];
+                    let valB = b[key];
+                    if (key === 'price_rule') {
+                        valA = parseFloat(valA) || 0;
+                        valB = parseFloat(valB) || 0;
+                    } else {
+                        valA = String(valA || '').toLowerCase();
+                        valB = String(valB || '').toLowerCase();
+                    }
+                    if (valA < valB) return -1 * dir;
+                    if (valA > valB) return 1 * dir;
+                    return 0;
+                });
 
-                if (valA < valB) return -1 * dir;
-                if (valA > valB) return 1 * dir;
-                return 0;
-            });
-
-            let tableRowsHtml = combinations.map(combo => `
+                const tableRowsHtml = combinations.map(function(combo) {
+                    return `
                 <tr class="border-t border-slate-700/60">
-                    <input type="hidden" name="spnprice_id" value="${combo.spnprice_id}">
-                    <input type="hidden" name="utm_source" value="${combo.utm_source}">
-                    <input type="hidden" name="url" value="${combo.urlPath}">
-                    <input type="hidden" name="slot_id" value="${combo.unit}">
-                    <td class="text-slate-400 text-xs py-2">${combo.utm_source || '-'}</td>
-                    <td class="text-slate-400 text-xs py-2">${combo.urlPath || '-'}</td>
-                    <td class="text-slate-300 text-xs py-2 font-semibold">${combo.unit}</td>
+                    <input type="hidden" name="spnprice_id" value="${escapeHtml(combo.spnprice_id)}">
+                    <input type="hidden" name="utm_source" value="${escapeHtml(combo.utm_source)}">
+                    <input type="hidden" name="url" value="${escapeHtml(combo.urlPath)}">
+                    <input type="hidden" name="slot_id" value="${escapeHtml(combo.unit)}">
+                    <td class="text-slate-400 text-xs py-2">${escapeHtml(combo.utm_source || '-')}</td>
+                    <td class="text-slate-400 text-xs py-2">${escapeHtml(combo.urlPath || '-')}</td>
+                    <td class="text-slate-300 text-xs py-2 font-semibold">${escapeHtml(combo.unit)}</td>
                     <td class="py-2">
-                        <input name="price_rule" type="number" step="0.01" class="w-24 bg-slate-800 rounded-md px-2 py-1 text-sm" placeholder="0.00" value="${combo.price_rule}">
+                        <input name="price_rule" type="number" step="0.01" class="w-24 bg-slate-800 rounded-md px-2 py-1 text-sm" placeholder="0.00" value="${escapeHtml(combo.price_rule)}">
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+                }).join('');
 
-            card.innerHTML = `
-                <form onsubmit="savePricingRules(event)">
+                card.innerHTML = combinations.length ? `
+                <form data-network="AdSeleto" onsubmit="savePricingRules(event)">
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="block text-xs text-slate-400 mb-1">PMD ID (para todas as regras)</label>
-                            <input name="domain_id" required class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Preencher na 1ª vez" value="${pmd_id}">
+                            <input name="domain_id" required class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Preencher na 1ª vez" value="${escapeHtml(pmd_id)}">
                         </div>
                     </div>
                     <div class="overflow-auto max-h-64">
                         <table class="w-full text-left text-sm pricing-table">
                             <thead>
                                 <tr class="text-slate-400">
-                                    <th class="font-semibold" onclick="togglePricingSort('utm_source')">UTM Source${pricingSortIndicator('utm_source')}</th>
-                                    <th class="font-semibold" onclick="togglePricingSort('urlPath')">URL${pricingSortIndicator('urlPath')}</th>
-                                    <th class="font-semibold" onclick="togglePricingSort('unit')">Bloco${pricingSortIndicator('unit')}</th>
-                                    <th class="font-semibold" onclick="togglePricingSort('price_rule')">Valor${pricingSortIndicator('price_rule')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('AdSeleto','utm_source')">UTM Source${pricingSortIndicator('AdSeleto','utm_source')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('AdSeleto','urlPath')">URL${pricingSortIndicator('AdSeleto','urlPath')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('AdSeleto','unit')">Bloco${pricingSortIndicator('AdSeleto','unit')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('AdSeleto','price_rule')">Valor${pricingSortIndicator('AdSeleto','price_rule')}</th>
                                 </tr>
                             </thead>
                             <tbody>${tableRowsHtml}</tbody>
                         </table>
                     </div>
                     <button type="submit" class="mt-4 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-xl w-full">Salvar Todas as Regras</button>
-                </form>
-            `;
+                </form>` : '<p class="text-sm text-slate-300">Nenhuma combinação de URL e bloco encontrada.</p>';
+            } else if (network === 'Igoal') {
+                const canal = partData.meta.canal || '';
+                const utmSourceValue = extractUtmSource(canal);
+                const configuredUrls = partData.meta.urls || [];
+                const adUnits = [...new Set(partData.details.map(d => d.adunit))];
+                const existingRules = LAST_RES.pricingRulesIgoal || [];
+
+                const combinations = [];
+                const seen = new Set();
+                let defaultCompanyId = '';
+
+                configuredUrls.forEach(function(url) {
+                    const parsed = parseDomainAndPath(url);
+                    const domain = parsed.domain;
+                    const path = parsed.path;
+                    adUnits.forEach(function(unit) {
+                        const key = `${domain}||${path}||${unit}||${utmSourceValue}`;
+                        if (seen.has(key)) return;
+                        seen.add(key);
+                        const existingRule = existingRules.find(function(rule) {
+                            return String(rule.dominio || '').toLowerCase() === domain &&
+                                   String(rule.url || '').toLowerCase() === path.toLowerCase() &&
+                                   String(rule.bloco || '') === String(unit || '') &&
+                                   String(rule.utm_source || '') === String(utmSourceValue || '');
+                        });
+                        if (existingRule && existingRule.company_id && !defaultCompanyId) {
+                            defaultCompanyId = existingRule.company_id;
+                        }
+                        combinations.push({
+                            rule_id: existingRule ? existingRule.rule_id : '',
+                            dominio: domain,
+                            urlPath: path,
+                            unit: unit,
+                            utm_source: utmSourceValue,
+                            price_rule: existingRule ? existingRule.price_rule : '',
+                            company_id: existingRule ? existingRule.company_id : ''
+                        });
+                    });
+                });
+
+                combinations.sort(function(a, b) {
+                    const key = sortState.by;
+                    const dir = sortState.dir === 'asc' ? 1 : -1;
+                    let valA = a[key];
+                    let valB = b[key];
+                    if (key === 'price_rule') {
+                        valA = parseFloat(valA) || 0;
+                        valB = parseFloat(valB) || 0;
+                    } else {
+                        valA = String(valA || '').toLowerCase();
+                        valB = String(valB || '').toLowerCase();
+                    }
+                    if (valA < valB) return -1 * dir;
+                    if (valA > valB) return 1 * dir;
+                    return 0;
+                });
+
+                const rowsHtml = combinations.map(function(combo) {
+                    return `
+                <tr class="border-t border-slate-700/60">
+                    <input type="hidden" name="rule_id" value="${escapeHtml(combo.rule_id)}">
+                    <input type="hidden" name="dominio" value="${escapeHtml(combo.dominio)}">
+                    <input type="hidden" name="utm_source" value="${escapeHtml(combo.utm_source)}">
+                    <input type="hidden" name="url" value="${escapeHtml(combo.urlPath)}">
+                    <input type="hidden" name="bloco" value="${escapeHtml(combo.unit)}">
+                    <td class="text-slate-400 text-xs py-2">${escapeHtml(combo.dominio || '-')}</td>
+                    <td class="text-slate-400 text-xs py-2">${escapeHtml(combo.urlPath || '-')}</td>
+                    <td class="text-slate-400 text-xs py-2">${escapeHtml(combo.utm_source || '-')}</td>
+                    <td class="text-slate-300 text-xs py-2 font-semibold">${escapeHtml(combo.unit || '-')}</td>
+                    <td class="py-2">
+                        <input name="price_rule" type="number" step="0.01" class="w-24 bg-slate-800 rounded-md px-2 py-1 text-sm" placeholder="0.00" value="${escapeHtml(combo.price_rule)}">
+                    </td>
+                </tr>`;
+                }).join('');
+
+                const companyValue = escapeHtml(defaultCompanyId);
+                const submitDisabled = combinations.length ? '' : ' disabled';
+
+                card.innerHTML = combinations.length ? `
+                <form data-network="Igoal" onsubmit="savePricingRules(event)">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Company ID (para todas as regras)</label>
+                            <input name="company_id" required class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Informe o Company ID" value="${companyValue}">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">UTM Source detectada</label>
+                            <input class="w-full pill rounded-lg px-3 py-2 text-sm bg-slate-800/60 border border-slate-700/60" value="${escapeHtml(utmSourceValue)}" readonly>
+                        </div>
+                    </div>
+                    <div class="overflow-auto max-h-64">
+                        <table class="w-full text-left text-sm pricing-table">
+                            <thead>
+                                <tr class="text-slate-400">
+                                    <th class="font-semibold" onclick="togglePricingSort('Igoal','dominio')">Domínio${pricingSortIndicator('Igoal','dominio')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('Igoal','urlPath')">URL${pricingSortIndicator('Igoal','urlPath')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('Igoal','utm_source')">UTM Source${pricingSortIndicator('Igoal','utm_source')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('Igoal','unit')">Bloco${pricingSortIndicator('Igoal','unit')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('Igoal','price_rule')">Valor${pricingSortIndicator('Igoal','price_rule')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                    <button type="submit" class="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-xl w-full"${submitDisabled}>Salvar Todas as Regras</button>
+                </form>` : '<p class="text-sm text-slate-300">Nenhum bloco elegível encontrado para precificação.</p>';
+            } else {
+                card.innerHTML = '<p class="text-sm text-slate-300">Rede sem suporte para precificação automática.</p>';
+            }
         }
-        
-        if (!forceRerender) {
+
+        if (forceRerender) {
+            card.classList.remove('hidden');
+        } else {
             card.classList.toggle('hidden');
         }
     }
@@ -730,42 +906,84 @@
     function savePricingRules(event) {
         event.preventDefault();
         const form = event.target;
-        const pmdId = form.domain_id.value.trim();
+        const network = form.dataset.network || 'AdSeleto';
         const rows = form.querySelectorAll('tbody tr');
-        
-        if (!pmdId) { showToast('O PMD ID é obrigatório.', 'error'); return; }
 
-        const rulesPayload = [];
-        rows.forEach(row => {
-            const price_rule = row.querySelector('[name=price_rule]').value;
-            if (price_rule) {
-                rulesPayload.push({
-                    spnprice_id: row.querySelector('[name=spnprice_id]').value,
-                    domain_id: pmdId,
-                    price_rule: price_rule,
-                    utm_source: row.querySelector('[name=utm_source]').value,
-                    slot_id: row.querySelector('[name=slot_id]').value,
-                    url: row.querySelector('[name=url]').value,
-                });
-            }
-        });
+        if (network === 'AdSeleto') {
+            const pmdId = (form.domain_id.value || '').trim();
+            if (!pmdId) { showToast('O PMD ID é obrigatório.', 'error'); return; }
 
-        if(rulesPayload.length === 0) { showToast('Preencha ao menos um valor para salvar.', 'error'); return; }
+            const rulesPayload = [];
+            rows.forEach(row => {
+                const price_rule = row.querySelector('[name=price_rule]').value;
+                if (price_rule) {
+                    rulesPayload.push({
+                        spnprice_id: row.querySelector('[name=spnprice_id]').value,
+                        domain_id: pmdId,
+                        price_rule: price_rule,
+                        utm_source: row.querySelector('[name=utm_source]').value,
+                        slot_id: row.querySelector('[name=slot_id]').value,
+                        url: row.querySelector('[name=url]').value,
+                    });
+                }
+            });
 
-        google.script.run.withSuccessHandler(function(res) {
-            if (res.ok) {
-                showToast('Regras salvas na planilha com sucesso!\nElas serão enviadas na próxima sincronização.', 'success');
-                const updatedRules = res.rules;
-                updatedRules.forEach(newRule => {
-                    const index = (LAST_RES.pricingRulesAdSeleto || []).findIndex(r => String(r.spnprice_id) === String(newRule.spnprice_id));
-                    if (index > -1) { LAST_RES.pricingRulesAdSeleto[index] = newRule; } 
-                    else { LAST_RES.pricingRulesAdSeleto.push(newRule); }
-                });
-                form.closest('.card').classList.add('hidden');
-            } else {
-                showToast('Falha ao salvar as regras: ' + (res.message || 'Erro desconhecido.'), 'error');
-            }
-        }).upsertPricingRulesAdSeleto(rulesPayload);
+            if(rulesPayload.length === 0) { showToast('Preencha ao menos um valor para salvar.', 'error'); return; }
+
+            google.script.run.withSuccessHandler(function(res) {
+                if (res.ok) {
+                    showToast('Regras salvas na planilha com sucesso!\nElas serão enviadas na próxima sincronização.', 'success');
+                    const updatedRules = res.rules || [];
+                    updatedRules.forEach(newRule => {
+                        const index = (LAST_RES.pricingRulesAdSeleto || []).findIndex(r => String(r.spnprice_id) === String(newRule.spnprice_id));
+                        if (index > -1) { LAST_RES.pricingRulesAdSeleto[index] = newRule; }
+                        else { LAST_RES.pricingRulesAdSeleto.push(newRule); }
+                    });
+                    form.closest('.card').classList.add('hidden');
+                } else {
+                    showToast('Falha ao salvar as regras: ' + (res.message || 'Erro desconhecido.'), 'error');
+                }
+            }).upsertPricingRulesAdSeleto(rulesPayload);
+        } else if (network === 'Igoal') {
+            const companyId = (form.company_id.value || '').trim();
+            if (!companyId) { showToast('O Company ID é obrigatório.', 'error'); return; }
+
+            const rulesPayload = [];
+            rows.forEach(row => {
+                const price_rule = row.querySelector('[name=price_rule]').value;
+                if (price_rule) {
+                    rulesPayload.push({
+                        rule_id: row.querySelector('[name=rule_id]').value,
+                        dominio: row.querySelector('[name=dominio]').value,
+                        utm_source: row.querySelector('[name=utm_source]').value,
+                        url: row.querySelector('[name=url]').value,
+                        bloco: row.querySelector('[name=bloco]').value,
+                        company_id: companyId,
+                        price_rule: price_rule
+                    });
+                }
+            });
+
+            if(rulesPayload.length === 0) { showToast('Preencha ao menos um valor para salvar.', 'error'); return; }
+
+            google.script.run.withSuccessHandler(function(res) {
+                if (res.ok) {
+                    showToast('Regras da Igoal salvas na planilha!\nElas serão enviadas na próxima sincronização.', 'success');
+                    const updatedRules = res.rules || [];
+                    updatedRules.forEach(newRule => {
+                        if (!newRule.company_id) newRule.company_id = companyId;
+                        const index = (LAST_RES.pricingRulesIgoal || []).findIndex(r => String(r.rule_id) === String(newRule.rule_id));
+                        if (index > -1) { LAST_RES.pricingRulesIgoal[index] = newRule; }
+                        else { LAST_RES.pricingRulesIgoal.push(newRule); }
+                    });
+                    form.closest('.card').classList.add('hidden');
+                } else {
+                    showToast('Falha ao salvar as regras: ' + (res.message || 'Erro desconhecido.'), 'error');
+                }
+            }).upsertPricingRulesIgoal(rulesPayload);
+        } else {
+            showToast('Rede não suportada para salvar regras.', 'error');
+        }
     }
     
     function setupCompareChart(res){
