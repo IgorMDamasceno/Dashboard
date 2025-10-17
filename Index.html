@@ -92,11 +92,17 @@
         <div class="grid sm:grid-cols-2 lg:grid-cols-6 gap-4">
           <div>
             <label class="block text-sm font-medium text-slate-400 mb-1">Pessoa</label>
-            <select id="f-pessoa" class="w-full pill rounded-lg px-3 py-2 text-sm"></select>
+            <div class="space-y-2">
+              <input id="f-pessoa-search" type="text" class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Buscar pessoa...">
+              <select id="f-pessoa" class="w-full pill rounded-lg px-3 py-2 text-sm"></select>
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-400 mb-1">Operação</label>
-            <select id="f-operacao" class="w-full pill rounded-lg px-3 py-2 text-sm" disabled></select>
+            <div class="space-y-2">
+              <input id="f-operacao-search" type="text" class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Buscar operação..." disabled>
+              <select id="f-operacao" class="w-full pill rounded-lg px-3 py-2 text-sm" disabled></select>
+            </div>
           </div>
           <div class="lg:col-span-2">
             <label class="block text-sm font-medium text-slate-400 mb-1">Páginas de Queda</label>
@@ -104,7 +110,7 @@
               <button id="pq-toggle" type="button" class="w-full pill rounded-lg px-3 py-2 text-left text-sm" aria-haspopup="true" aria-expanded="false">
                 <span id="pq-summary" class="text-slate-300">— selecione —</span>
               </button>
-              <div id="pq-panel" class="hidden absolute left-0 right-0 mt-1 card rounded-xl p-3 z-50 flex flex-col shadow-2xl max-h-80"></div>
+              <div id="pq-panel" class="hidden card rounded-xl p-3 z-50 flex flex-col shadow-2xl max-h-80"></div>
             </div>
           </div>
           <div>
@@ -248,6 +254,155 @@
     function money(n, d){ if(d===undefined) d=2; return '$'+num(n,d); }
     function escapeHtml(str){ return String(str==null?'':str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+    function sha256Hex(str){
+        if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+            return window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function(buffer){
+                var bytes = Array.from(new Uint8Array(buffer));
+                return bytes.map(function(b){ return b.toString(16).padStart(2, '0'); }).join('');
+            });
+        }
+        return Promise.resolve(fallbackHash(str));
+    }
+
+    function fallbackHash(str){
+        var hash = 0;
+        for (var i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return (hash >>> 0).toString(16).padStart(8, '0');
+    }
+
+    function verifyCoordPassword(value){
+        if (!value) return Promise.resolve(false);
+        return sha256Hex('coord::' + value).then(function(result){
+            if (result === CoordAccess.hash) return true;
+            if (CoordAccess.fallback && result === CoordAccess.fallback) return true;
+            return false;
+        }).catch(function(){ return false; });
+    }
+
+    var SELECT_MODELS = {};
+
+    function initSearchableSelect(selectId, placeholder){
+        if (!SELECT_MODELS[selectId]) {
+            SELECT_MODELS[selectId] = { placeholder: placeholder === undefined ? '— selecione —' : placeholder, source: [], searchTerm: '' };
+        } else if (placeholder !== undefined) {
+            SELECT_MODELS[selectId].placeholder = placeholder;
+        }
+        var input = byId(selectId + '-search');
+        if (input) {
+            input.addEventListener('input', function(){
+                var model = SELECT_MODELS[selectId];
+                if (!model) return;
+                model.searchTerm = this.value || '';
+                renderSearchableSelect(selectId);
+            });
+        }
+    }
+
+    function setSearchableOptions(selectId, options, preserveSearch){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        model.source = (options || []).slice();
+        if (!preserveSearch) {
+            model.searchTerm = '';
+            var input = byId(selectId + '-search');
+            if (input) input.value = '';
+        }
+        renderSearchableSelect(selectId);
+    }
+
+    function renderSearchableSelect(selectId){
+        var model = SELECT_MODELS[selectId];
+        var sel = byId(selectId);
+        if (!model || !sel) return;
+        var current = sel.value;
+        sel.innerHTML = '';
+        var searchTerm = (model.searchTerm || '').toLowerCase();
+        var filtered = model.source.filter(function(opt){
+            return !searchTerm || String(opt).toLowerCase().indexOf(searchTerm) !== -1;
+        });
+        if (model.placeholder !== null) {
+            var opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = model.placeholder || '— selecione —';
+            sel.appendChild(opt);
+        }
+        filtered.forEach(function(optValue){
+            var option = document.createElement('option');
+            option.value = optValue;
+            option.textContent = optValue;
+            sel.appendChild(option);
+        });
+        if (current && filtered.indexOf(current) >= 0) {
+            sel.value = current;
+        } else {
+            sel.value = '';
+        }
+    }
+
+    function setSearchableDisabled(selectId, disabled){
+        var sel = byId(selectId);
+        if (sel) sel.disabled = !!disabled;
+        var input = byId(selectId + '-search');
+        if (input) input.disabled = !!disabled;
+    }
+
+    var BLOCK_SORT_FIELDS = [
+        { value: 'revenue', label: 'Receita' },
+        { value: 'impressions', label: 'Impressões' },
+        { value: 'clicks', label: 'Cliques' },
+        { value: 'ctr', label: 'CTR' },
+        { value: 'ecpm', label: 'eCPM' },
+        { value: 'requests', label: 'Solicitações' },
+        { value: 'coverage', label: 'Cobertura' },
+        { value: 'cpc', label: 'CPC' },
+        { value: 'page', label: 'Página (A-Z)' }
+    ];
+
+    function getBlockMetricValue(entry, metric){
+        if (metric === 'page') return String(entry && entry.page ? entry.page : '');
+        var metrics = entry && entry.metrics ? entry.metrics : {};
+        var value = Number(metrics[metric]);
+        if (!isFinite(value)) value = 0;
+        return value;
+    }
+
+    function sortBlockEntries(list, state){
+        var metric = state && state.metric ? state.metric : 'revenue';
+        var dir = state && state.dir === 'asc' ? 1 : -1;
+        return (list || []).slice().sort(function(a, b){
+            if (metric === 'page') {
+                var cmp = String(a && a.page ? a.page : '').localeCompare(String(b && b.page ? b.page : ''), 'pt-BR');
+                if (cmp !== 0) return cmp * dir;
+                var fallbackA = getBlockMetricValue(a, 'revenue');
+                var fallbackB = getBlockMetricValue(b, 'revenue');
+                if (fallbackA < fallbackB) return -1;
+                if (fallbackA > fallbackB) return 1;
+                return 0;
+            }
+            var valA = getBlockMetricValue(a, metric);
+            var valB = getBlockMetricValue(b, metric);
+            if (valA < valB) return -1 * dir;
+            if (valA > valB) return 1 * dir;
+            return String(a && a.page ? a.page : '').localeCompare(String(b && b.page ? b.page : ''), 'pt-BR');
+        });
+    }
+
+    function buildBlockSortControls(prefix, state){
+        var options = BLOCK_SORT_FIELDS.map(function(opt){
+            var selected = state && state.metric === opt.value ? ' selected' : '';
+            return '<option value="'+opt.value+'"'+selected+'>'+opt.label+'</option>';
+        }).join('');
+        var dirLabel = state && state.dir === 'asc' ? 'Ordem crescente' : 'Ordem decrescente';
+        return '<div class="flex flex-wrap items-center gap-3 text-sm text-slate-300">'
+            + '<label for="'+prefix+'-sort-field" class="text-xs uppercase tracking-wide text-slate-400">Ordenar blocos por</label>'
+            + '<select id="'+prefix+'-sort-field" class="pill rounded-lg px-3 py-1.5 text-sm">'+options+'</select>'
+            + '<button id="'+prefix+'-sort-dir" type="button" class="pill rounded-lg px-3 py-1.5 text-sm hover:text-white">'+dirLabel+'</button>'
+            + '</div>';
+    }
+
     var CurrencyModal = { element: null, acceptButton: null, cancelButton: null, onAccept: null };
 
     function setupCurrencyModal(){
@@ -302,6 +457,12 @@
         if (input) input.value = '';
         var error = byId('coord-password-error');
         if (error) error.classList.add('hidden');
+        var btn = byId('coord-password-confirm');
+        if (btn) {
+            btn.disabled = false;
+            if (btn.dataset.originalText) btn.textContent = btn.dataset.originalText;
+        }
+        CoordAccess.verifying = false;
         CoordAccess.pending = null;
     }
 
@@ -313,19 +474,48 @@
         var btnConfirm = byId('coord-password-confirm');
         if (btnConfirm) {
             btnConfirm.onclick = function(){
+                if (CoordAccess.verifying) return;
                 var input = byId('coord-password-input');
                 var error = byId('coord-password-error');
                 var value = input ? String(input.value || '').trim() : '';
-                if (value === CoordAccess.password) {
-                    CoordAccess.granted = true;
-                    var cb = CoordAccess.pending;
-                    hideCoordPasswordModal();
-                    CoordAccess.pending = null;
-                    if (typeof cb === 'function') cb();
-                } else {
+                if (!value) {
                     if (error) error.classList.remove('hidden');
                     if (input) input.focus();
+                    return;
                 }
+                if (error) error.classList.add('hidden');
+                CoordAccess.verifying = true;
+                var original = btnConfirm.dataset.originalText || btnConfirm.textContent;
+                btnConfirm.dataset.originalText = original;
+                btnConfirm.textContent = 'Verificando...';
+                btnConfirm.disabled = true;
+                verifyCoordPassword(value).then(function(valid){
+                    CoordAccess.verifying = false;
+                    btnConfirm.disabled = false;
+                    btnConfirm.textContent = btnConfirm.dataset.originalText || original;
+                    if (valid) {
+                        CoordAccess.granted = true;
+                        var cb = CoordAccess.pending;
+                        hideCoordPasswordModal();
+                        CoordAccess.pending = null;
+                        if (typeof cb === 'function') cb();
+                    } else {
+                        if (error) error.classList.remove('hidden');
+                        if (input) {
+                            input.focus();
+                            input.select();
+                        }
+                    }
+                }).catch(function(){
+                    CoordAccess.verifying = false;
+                    btnConfirm.disabled = false;
+                    btnConfirm.textContent = btnConfirm.dataset.originalText || original;
+                    if (error) error.classList.remove('hidden');
+                    if (input) {
+                        input.focus();
+                        input.select();
+                    }
+                });
             };
         }
         var btnCancel = byId('coord-password-cancel');
@@ -414,6 +604,7 @@
             container.innerHTML = '<div class="card rounded-2xl p-6 text-slate-200 border border-slate-700/60 bg-slate-900/40">'+escapeHtml(msg)+'</div>';
             return;
         }
+        COORD.lastResponse = res;
         var operations = (res && res.operations) ? res.operations.slice() : [];
         if (!operations.length) {
             container.innerHTML = '<div class="card rounded-2xl p-6 text-slate-200 border border-slate-700/60 bg-slate-900/40">Nenhuma operação configurada para essa pessoa no período selecionado.</div>';
@@ -480,7 +671,32 @@
         });
 
         container.innerHTML = '';
+        var sortControls = document.createElement('div');
+        sortControls.className = 'flex flex-wrap items-center justify-end gap-3 mb-4';
+        sortControls.innerHTML = buildBlockSortControls('coord-block', COORD_BLOCK_SORT);
+        container.appendChild(sortControls);
+        var coordField = sortControls.querySelector('#coord-block-sort-field');
+        if (coordField) {
+            coordField.onchange = function(){
+                COORD_BLOCK_SORT.metric = this.value;
+                rerenderCoordination();
+            };
+        }
+        var coordDir = sortControls.querySelector('#coord-block-sort-dir');
+        if (coordDir) {
+            coordDir.onclick = function(){
+                COORD_BLOCK_SORT.dir = (COORD_BLOCK_SORT.dir === 'asc') ? 'desc' : 'asc';
+                rerenderCoordination();
+            };
+        }
         container.appendChild(frag);
+    }
+
+    function rerenderCoordination(){
+        if (!CoordAccess.granted) return;
+        if (COORD.lastResponse) {
+            renderCoordination(COORD.lastResponse);
+        }
     }
 
     function renderCoordinationSuggestionCell(text){
@@ -557,10 +773,8 @@
 
         function tableFor(list){
             if (!list || !list.length) return '';
-            list.sort(function(a,b){
-                return String(a.page||'').localeCompare(String(b.page||''), 'pt-BR');
-            });
-            var rows = list.map(function(item){
+            var sorted = sortBlockEntries(list, COORD_BLOCK_SORT);
+            var rows = sorted.map(function(item){
                 var metrics = item.metrics || {};
                 return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/50">'
                     + '<td class="py-2 px-2 text-slate-300">'+escapeHtml(item.page || '-')+'</td>'
@@ -755,10 +969,12 @@
     var LAST_RES = null;
     var SORT = { by: 'revenue', dir: 'desc' };
     var PRICING_SORT = {};
+    var BLOCK_SORT = { metric: 'revenue', dir: 'desc' };
+    var COORD_BLOCK_SORT = { metric: 'revenue', dir: 'desc' };
     var PQ = { options: [], selected: [], open:false, searchTerm: '' };
     var CHART = { inst: null };
-    var COORD = { operations: [], operationMap: {}, cpcTargets: {}, loading: false };
-    var CoordAccess = { granted: false, password: '147963', pending: null };
+    var COORD = { operations: [], operationMap: {}, cpcTargets: {}, loading: false, lastResponse: null };
+    var CoordAccess = { granted: false, hash: '87402fdebedf4d5bf24d2f80aca3ae0197e8837d16a9c0155f366343c1f6a4bf', fallback: 'b10d26f7', pending: null, verifying: false };
     var SYNC_TIMERS = {};
 
     function showToast(message, type = 'info') {
@@ -827,39 +1043,134 @@
     function loadConfig(){ google.script.run.withSuccessHandler(function(res){ CFG = res || {}; fillPessoa(res.pessoas || []); renderCfgTable(res.rows || []); }).getConfig(); }
 
     function fillPessoa(list){
-      var sel = byId('f-pessoa');
-      sel.innerHTML = '<option value="">— selecione —</option>' + (list||[]).map(function(p){return '<option>'+p+'</option>';}).join('');
-      sel.onchange = function(){
-        var ops = (CFG.opsByPessoa && CFG.opsByPessoa[this.value]) ? CFG.opsByPessoa[this.value] : [];
-        var elOp = byId('f-operacao');
-        elOp.disabled = !ops.length;
-        elOp.innerHTML = '<option value="">— selecione —</option>' + ops.map(function(o){return '<option>'+o+'</option>';}).join('');
-        resetPQ();
-      };
+      setSearchableOptions('f-pessoa', list || []);
+      var pessoaSelect = byId('f-pessoa');
+      var operacaoSelect = byId('f-operacao');
+
+      function applyOperacoes(pessoa){
+        var ops = (CFG.opsByPessoa && pessoa) ? (CFG.opsByPessoa[pessoa] || []) : [];
+        setSearchableOptions('f-operacao', ops || []);
+        setSearchableDisabled('f-operacao', !ops.length);
+        if (!ops.length && operacaoSelect) operacaoSelect.value = '';
+      }
+
+      if (pessoaSelect) {
+        var selectedPessoa = pessoaSelect.value;
+        pessoaSelect.onchange = function(){
+          var pessoa = this.value;
+          applyOperacoes(pessoa);
+          resetPQ();
+        };
+        if (selectedPessoa && list && list.indexOf(selectedPessoa) === -1) {
+          pessoaSelect.value = '';
+          selectedPessoa = '';
+        }
+        applyOperacoes(selectedPessoa);
+      } else {
+        applyOperacoes('');
+      }
+
+      if (operacaoSelect) {
+        operacaoSelect.onchange = function(){
+          var key = byId('f-pessoa').value + '||' + this.value;
+          var pags = (CFG.paginasByOp && CFG.paginasByOp[key]) ? CFG.paginasByOp[key] : [];
+          setPQOptions(pags);
+        };
+      }
+
       var coordSel = byId('coord-pessoa');
       if (coordSel) {
         var previous = coordSel.value;
-        coordSel.innerHTML = '<option value="">— selecione —</option>' + (list||[]).map(function(p){return '<option>'+p+'</option>';}).join('');
+        coordSel.innerHTML = '<option value="">— selecione —</option>' + (list||[]).map(function(p){return '<option>'+escapeHtml(p)+'</option>';}).join('');
         if (previous && list && list.indexOf(previous) >= 0) coordSel.value = previous;
         coordSel.onchange = function(){ loadCoordinationData(); };
       }
-      byId('f-operacao').onchange = function(){
-        var key = byId('f-pessoa').value+'||'+this.value;
-        var pags = (CFG.paginasByOp && CFG.paginasByOp[key]) ? CFG.paginasByOp[key] : [];
-        setPQOptions(pags);
-      };
+    }
+
+    function positionPQPanel(){
+      var panel = byId('pq-panel');
+      var toggle = byId('pq-toggle');
+      if (!panel || !toggle || panel.classList.contains('hidden')) return;
+      var rect = toggle.getBoundingClientRect();
+      var desiredWidth = Math.max(rect.width, 260);
+      panel.style.minWidth = desiredWidth + 'px';
+      panel.style.maxWidth = '420px';
+      panel.style.width = Math.min(desiredWidth, 420) + 'px';
+      var panelWidth = panel.offsetWidth || Math.min(desiredWidth, 420);
+      var left = rect.left;
+      var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+      if (left + panelWidth > viewportWidth - 16) {
+        left = Math.max(16, viewportWidth - panelWidth - 16);
+      }
+      panel.style.left = left + 'px';
+      var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      var panelHeight = panel.offsetHeight;
+      var top = rect.bottom + 6;
+      if (panelHeight && (top + panelHeight > viewportHeight - 16)) {
+        if ((rect.top - 6) - panelHeight >= 16) {
+          top = rect.top - panelHeight - 6;
+        } else {
+          top = Math.max(16, viewportHeight - panelHeight - 16);
+        }
+      }
+      if (top < 16) top = 16;
+      panel.style.top = top + 'px';
     }
 
     function wirePQ(){
-      byId('pq-toggle').onclick = function(){ 
-        PQ.open = !PQ.open; 
-        byId('pq-panel').classList.toggle('hidden', !PQ.open); 
-        if (PQ.open) { 
-          renderPQOptions(); 
-          byId('pq-panel').querySelector('#pq-search').focus(); 
-        } 
-      };
-      document.addEventListener('click', function(e){ if (!byId('pq-select').contains(e.target)) { PQ.open = false; byId('pq-panel').classList.add('hidden'); } });
+      var toggle = byId('pq-toggle');
+      var panel = byId('pq-panel');
+      if (panel && !panel.dataset.floating) {
+        panel.dataset.floating = 'true';
+        panel.classList.add('hidden');
+        panel.style.position = 'fixed';
+        panel.style.maxHeight = '320px';
+        panel.style.overflowY = 'auto';
+        panel.style.zIndex = 70;
+        document.body.appendChild(panel);
+        panel.addEventListener('click', function(evt){ evt.stopPropagation(); });
+      }
+
+      function closePanel(){
+        PQ.open = false;
+        if (panel) panel.classList.add('hidden');
+      }
+
+      function openPanel(){
+        PQ.open = true;
+        renderPQOptions();
+        panel = byId('pq-panel');
+        if (!panel) return;
+        panel.style.visibility = 'hidden';
+        panel.classList.remove('hidden');
+        positionPQPanel();
+        panel.style.visibility = '';
+        var search = panel.querySelector('#pq-search');
+        if (search) {
+          search.focus();
+          var len = search.value.length;
+          try { search.setSelectionRange(len, len); } catch(err) {}
+        }
+      }
+
+      if (toggle) {
+        toggle.addEventListener('click', function(evt){
+          evt.stopPropagation();
+          if (PQ.open) closePanel();
+          else openPanel();
+        });
+      }
+
+      document.addEventListener('click', function(evt){
+        if (!PQ.open) return;
+        var tgl = byId('pq-toggle');
+        var pnl = byId('pq-panel');
+        if ((tgl && tgl.contains(evt.target)) || (pnl && pnl.contains(evt.target))) return;
+        closePanel();
+      });
+
+      window.addEventListener('resize', function(){ if (PQ.open) positionPQPanel(); });
+      window.addEventListener('scroll', function(){ if (PQ.open) positionPQPanel(); }, true);
     }
     function resetPQ(){ setPQOptions([]); }
     function setPQOptions(arr){
@@ -919,8 +1230,9 @@
       };
 
       updatePQOptionsList(activeSearch);
+      positionPQPanel();
     }
-    
+
     function updatePQOptionsList(filterValue) {
       var listContainer = byId('pq-options-list');
       if (!listContainer) return;
@@ -955,6 +1267,7 @@
       });
 
       updatePQSummary();
+      positionPQPanel();
     }
 
     function wireFilters(){
@@ -998,6 +1311,114 @@
         return (getValue(b, 'revenue') - getValue(a, 'revenue'));
       });
       return details;
+    }
+
+    function createCompareBlocksCard(compareBlocks){
+      var grouped = { P1: {}, P2: {}, Quiz: {} };
+      compareBlocks.forEach(function(r){
+        var part = r.parte || '';
+        if (!grouped[part]) grouped[part] = {};
+        var label = r.label || '-';
+        if (!grouped[part][label]) grouped[part][label] = [];
+        grouped[part][label].push(r);
+      });
+
+      function tableFor(list){
+        var rows = sortBlockEntries(list, BLOCK_SORT);
+        if (!rows.length) return '';
+        var body = rows.map(function(r){
+          var m = r.metrics || {};
+          return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60">'
+            + '<td class="py-2 pr-2">'+escapeHtml(r.page || '-')+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+money(m.revenue)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+num(m.impressions,0)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+num(m.clicks,0)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+pct(m.ctr,2)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+money(m.ecpm)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+num(m.requests,0)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+pct(m.coverage,2)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+money(m.cpc,3)+'</td>'
+            + '</tr>';
+        }).join('');
+        var head = '<thead class="text-slate-400"><tr>'
+          + '<th class="text-left py-2 pr-2">Página</th>'
+          + '<th class="text-right py-2 pr-2">Receita</th>'
+          + '<th class="text-right py-2 pr-2">Impressões</th>'
+          + '<th class="text-right py-2 pr-2">Cliques</th>'
+          + '<th class="text-right py-2 pr-2">CTR</th>'
+          + '<th class="text-right py-2 pr-2">eCPM</th>'
+          + '<th class="text-right py-2 pr-2">Solicitações</th>'
+          + '<th class="text-right py-2 pr-2">Cobertura</th>'
+          + '<th class="text-right py-2 pr-2">CPC</th>'
+          + '</tr></thead>';
+        return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+body+'</tbody></table></div>';
+      }
+
+      function sectionHtml(partKey, title, borderClass, textClass){
+        var partGroups = grouped[partKey] || {};
+        var preferred = {
+          Quiz: ['rewarded (Quiz)'],
+          P1: ['mob_top (P1)', 'mob_interstitial (P1)'],
+          P2: ['mob_top (P2)', 'mob_offerwall (P2)']
+        };
+        var seen = {};
+        var inner = '';
+        (preferred[partKey] || []).forEach(function(label){
+          if (partGroups[label] && partGroups[label].length) {
+            inner += '<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30">'
+              + '<h5 class="font-semibold text-sm mb-2 text-slate-200">'+escapeHtml(label)+'</h5>'
+              + tableFor(partGroups[label])
+              + '</div>';
+            seen[label] = true;
+          }
+        });
+        Object.keys(partGroups).sort(function(a,b){ return a.localeCompare(b, 'pt-BR'); }).forEach(function(label){
+          if (seen[label]) return;
+          inner += '<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30">'
+            + '<h5 class="font-semibold text-sm mb-2 text-slate-200">'+escapeHtml(label)+'</h5>'
+            + tableFor(partGroups[label])
+            + '</div>';
+        });
+        if (!inner) return '';
+        return '<div class="card rounded-xl p-4 '+borderClass+'">'
+          + '<h4 class="text-base font-bold mb-3 '+textClass+'">'+title+'</h4>'
+          + '<div class="space-y-4">'+inner+'</div>'
+          + '</div>';
+      }
+
+      var quizSection = sectionHtml('Quiz', 'Análise Quiz', 'border border-emerald-700 bg-emerald-900/10', 'text-emerald-300');
+      var p1Section = sectionHtml('P1', 'Análise P1', 'border border-blue-700 bg-blue-900/10', 'text-blue-300');
+      var p2Section = sectionHtml('P2', 'Análise P2', 'border border-teal-700 bg-teal-900/10', 'text-teal-300');
+
+      var content = '';
+      [quizSection, p1Section, p2Section].forEach(function(section){ if (section) content += section; });
+      if (!content) {
+        content = '<div class="card rounded-xl p-4 border border-slate-700/60 bg-slate-900/40 text-sm text-slate-300">Sem dados disponíveis para os blocos analisados.</div>';
+      }
+
+      var cmpb = document.createElement('div');
+      cmpb.className = 'card rounded-2xl p-5 space-y-6';
+      cmpb.innerHTML = '<div class="flex flex-wrap items-center justify-between gap-3">'
+        + '<h3 class="text-lg font-bold text-slate-100">Comparativo por Blocos</h3>'
+        + buildBlockSortControls('cmp-block', BLOCK_SORT)
+        + '</div>'
+        + '<div class="space-y-6">'+content+'</div>';
+
+      var sortField = cmpb.querySelector('#cmp-block-sort-field');
+      if (sortField) {
+        sortField.onchange = function(){
+          BLOCK_SORT.metric = this.value;
+          if (LAST_RES) renderDashboard(LAST_RES);
+        };
+      }
+      var sortDir = cmpb.querySelector('#cmp-block-sort-dir');
+      if (sortDir) {
+        sortDir.onclick = function(){
+          BLOCK_SORT.dir = (BLOCK_SORT.dir === 'asc') ? 'desc' : 'asc';
+          if (LAST_RES) renderDashboard(LAST_RES);
+        };
+      }
+      return cmpb;
     }
 
     function renderDetailsTable(details, hourly){
@@ -1103,7 +1524,9 @@
       if(res.compare&&res.compare.length){var cmp=document.createElement('div');cmp.className='card rounded-2xl p-5';cmp.innerHTML='<h3 class="text-lg font-bold mb-3">Comparativo — Total da Página</h3><div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">CPC</th><th class="text-right py-2 pr-2">RPS</th><th class="text-right py-2 pr-2">Taxa de interação</th></tr></thead><tbody>'+res.compare.map(function(r){return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(r.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(r.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(r.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(r.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(r.ecpm)+'</td><td class="py-2 pr-2 text-right">'+money(r.cpc,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.rps)+'</td><td class="py-2 pr-2 text-right">'+pct(r.interactionRate)+'</td></tr>';}).join('')+'</tbody></table></div>';hostC.appendChild(cmp);}
       var chartBox=document.createElement('div');chartBox.className='card rounded-2xl p-5';chartBox.innerHTML='<div class="flex items-center justify-between gap-4 flex-wrap"><h3 class="text-lg font-bold">Evolução por Hora</h3><div class="flex items-center gap-4 text-sm flex-wrap"><div class="flex items-center gap-2"><label for="cmp-block" class="text-slate-300">Bloco:</label><select id="cmp-block" class="pill rounded-lg px-3 py-1.5"><option value="Total" selected>Total</option><option value="mob_top (P1)">mob_top (P1)</option><option value="mob_interstitial (P1)">mob_interstitial (P1)</option><option value="mob_offerwall (P2)">mob_offerwall (P2)</option><option value="mob_top (P2)">mob_top (P2)</option><option value="rewarded (Quiz)">rewarded (Quiz)</option></select></div><div class="flex items-center gap-2"><label for="cmp-metric" class="text-slate-300">Métrica:</label><select id="cmp-metric" class="pill rounded-lg px-3 py-1.5"><option value="rps" selected>RPS</option><option value="cpc">CPC</option><option value="interactionRate">Taxa de interação</option><option value="ecpm">eCPM</option><option value="coverage">Cobertura</option><option value="effectiveEcpm">eCPM Efetivo</option></select></div></div></div><div class="relative w-full h-96 mt-4"><canvas id="cmp-canvas"></canvas></div>'+(!res.seriesChart||!res.seriesChart.length?'<div class="text-slate-400 text-sm mt-2">Sem dados suficientes para o gráfico.</div>':'');hostC.appendChild(chartBox);
       if(res.seriesChart&&res.seriesChart.length){function redraw(){setupCompareChart(LAST_RES);}byId('cmp-metric').onchange=redraw;byId('cmp-block').onchange=redraw;redraw();}
-      if(res.compareBlocks&&res.compareBlocks.length){var gr={P1:{},P2:{},Quiz:{}};var o1=['mob_top (P1)','mob_interstitial (P1)'],o2=['mob_offerwall (P2)','mob_top (P2)'],oq=['rewarded (Quiz)'];res.compareBlocks.forEach(function(r){var p=r.parte;if(!gr[p])gr[p]={};if(!gr[p][r.label])gr[p][r.label]=[];gr[p][r.label].push(r);});function tableFor(list){list.sort(function(a,b){return a.page<b.page?-1:(a.page>b.page?1:b.metrics.revenue-a.metrics.revenue);});return '<div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">Solicitações</th><th class="text-right py-2 pr-2">Cobertura</th><th class="text-right py-2 pr-2">CPC</th></tr></thead><tbody>'+list.map(function(r){var m=r.metrics;return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(m.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(m.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(m.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(m.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(m.ecpm)+'</td><td class="py-2 pr-2 text-right">'+num(m.requests,0)+'</td><td class="py-2 pr-2 text-right">'+pct(m.coverage,2)+'</td><td class="py-2 pr-2 text-right">'+money(m.cpc,3)+'</td></tr>';}).join('')+'</tbody></table></div>';}var cmpb=document.createElement('div');cmpb.className='card rounded-2xl p-5 space-y-6';var html='<h3 class="text-lg font-bold mb-2">Comparativo por Blocos</h3>';var p1h='',p2h='',qh='';oq.forEach(function(lbl){if(gr.Quiz&&gr.Quiz[lbl]&&gr.Quiz[lbl].length)qh+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.Quiz[lbl])+'</div>';});if(qh)html+='<div class="card rounded-xl p-4 border border-emerald-700 bg-emerald-900/10"><h4 class="text-base font-bold mb-3 text-emerald-300">Análise Quiz</h4><div class="space-y-4">'+qh+'</div></div>';o1.forEach(function(lbl){if(gr.P1&&gr.P1[lbl]&&gr.P1[lbl].length)p1h+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.P1[lbl])+'</div>';});if(p1h)html+='<div class="card rounded-xl p-4 border border-blue-700 bg-blue-900/10"><h4 class="text-base font-bold mb-3 text-blue-300">Análise P1</h4><div class="space-y-4">'+p1h+'</div></div>';o2.forEach(function(lbl){if(gr.P2&&gr.P2[lbl]&&gr.P2[lbl].length)p2h+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.P2[lbl])+'</div>';});if(p2h)html+='<div class="card rounded-xl p-4 border border-teal-700 bg-teal-900/10"><h4 class="text-base font-bold mb-3 text-teal-300">Análise P2</h4><div class="space-y-4">'+p2h+'</div></div>';cmpb.innerHTML=html;hostC.appendChild(cmpb);}
+      if(res.compareBlocks && res.compareBlocks.length){
+        hostC.appendChild(createCompareBlocksCard(res.compareBlocks));
+      }
     }
 
     function renderSuggestions(pageName, partData, cpcAlvo, network) {
@@ -1664,7 +2087,18 @@
       };
     }
 
-    document.addEventListener('DOMContentLoaded', function(){ loadConfig(); wirePQ(); wireFilters(); wireCfgForm(); setupCurrencyModal(); });
+    document.addEventListener('DOMContentLoaded', function(){
+        initSearchableSelect('f-pessoa', '— selecione —');
+        initSearchableSelect('f-operacao', '— selecione —');
+        setSearchableOptions('f-pessoa', []);
+        setSearchableOptions('f-operacao', []);
+        setSearchableDisabled('f-operacao', true);
+        loadConfig();
+        wirePQ();
+        wireFilters();
+        wireCfgForm();
+        setupCurrencyModal();
+    });
 </script>
 </body>
 </html>
