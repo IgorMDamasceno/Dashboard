@@ -1375,7 +1375,13 @@
                 const canal = partData.meta.canal || '';
                 const utmSourceValue = extractUtmSource(canal);
                 const configuredUrls = partData.meta.urls || [];
-                const adUnits = [...new Set(partData.details.map(d => d.adunit))];
+                const adUnits = [...new Set(
+                    (partData.details || [])
+                        .map(function(detail) { return detail.adunit; })
+                        .filter(function(unit) {
+                            return typeof unit === 'string' && unit.toLowerCase().includes('mob');
+                        })
+                )];
                 const existingRules = LAST_RES.pricingRulesIgoal || [];
 
                 const combinations = [];
