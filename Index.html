@@ -66,12 +66,6 @@
             <p class="text-slate-400 mt-1">Visualize o fluxo <b>Quiz → P1 → P2</b> por <i>Página de Queda</i> e compare os resultados.</p>
           </div>
         </div>
-        <div>
-          <button id="btn-sync-adseleto" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-xl shadow-lg shadow-indigo-900/50 transition-all duration-300 flex items-center gap-2">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a.75.75 0 01.75.75v1.313a.75.75 0 01-1.5 0V3.75A.75.75 0 0110 3zM10 15a.75.75 0 01.75.75v1.313a.75.75 0 01-1.5 0V15.75A.75.75 0 0110 15zM5.334 6.406a.75.75 0 011.06 0l.93.931a.75.75 0 11-1.06 1.06l-.93-.931a.75.75 0 010-1.06zM12.676 13.748a.75.75 0 011.06 0l.93.931a.75.75 0 11-1.06 1.06l-.93-.931a.75.75 0 010-1.06zM3 10a.75.75 0 01.75-.75h1.313a.75.75 0 010 1.5H3.75A.75.75 0 013 10zm12 0a.75.75 0 01.75-.75h1.313a.75.75 0 010 1.5H15.75a.75.75 0 01-.75-.75zm-7.735-4.656a.75.75 0 010-1.06l.93-.931a.75.75 0 011.06 1.06l-.93.931a.75.75 0 01-1.06 0zM13.748 12.676a.75.75 0 010-1.06l.93-.931a.75.75 0 011.06 1.06l-.93.931a.75.75 0 01-1.06 0zM10 7a3 3 0 100 6 3 3 0 000-6z" /></svg>
-            Sincronizar Precificação
-          </button>
-        </div>
       </div>
       <div class="mt-6 inline-flex rounded-xl pill p-1">
         <button id="tab-dash" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold flex items-center gap-2 transition-all">
@@ -81,6 +75,10 @@
         <button id="tab-conf" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2 transition-all">
           <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z" /><path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z" /></svg>
           Configurar
+        </button>
+        <button id="tab-coord" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2 transition-all">
+          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a.75.75 0 01.75.75V4h1.5A2.75 2.75 0 0115 6.75v.978a2.75 2.75 0 011.636 4.305l.999.999a.75.75 0 11-1.06 1.06l-.868-.868c-.46.333-1.017.526-1.622.526h-1.5v1.25a.75.75 0 01-1.5 0V12.75H8.25v1.25a.75.75 0 01-1.5 0V12.75h-1.5A2.75 2.75 0 012.5 10V6.75A2.75 2.75 0 015.25 4h1.5V2.75A.75.75 0 017.5 2zm0 3H5.25c-.69 0-1.25.56-1.25 1.25V10c0 .69.56 1.25 1.25 1.25h9.5c.69 0 1.25-.56 1.25-1.25V6.25c0-.69-.56-1.25-1.25-1.25H10z"/></svg>
+          Coordenação
         </button>
       </div>
     </header>
@@ -94,11 +92,25 @@
         <div class="grid sm:grid-cols-2 lg:grid-cols-6 gap-4">
           <div>
             <label class="block text-sm font-medium text-slate-400 mb-1">Pessoa</label>
-            <select id="f-pessoa" class="w-full pill rounded-lg px-3 py-2 text-sm"></select>
+            <div id="f-pessoa-select" class="relative">
+              <input type="hidden" id="f-pessoa">
+              <button id="f-pessoa-toggle" type="button" class="w-full pill rounded-lg px-3 py-2 text-left text-sm flex items-center justify-between gap-2">
+                <span id="f-pessoa-summary" class="truncate text-slate-300">— selecione —</span>
+                <svg class="w-4 h-4 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" /></svg>
+              </button>
+              <div id="f-pessoa-panel" class="hidden card rounded-xl p-3 z-50 flex flex-col shadow-2xl max-h-80"></div>
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-400 mb-1">Operação</label>
-            <select id="f-operacao" class="w-full pill rounded-lg px-3 py-2 text-sm" disabled></select>
+            <div id="f-operacao-select" class="relative">
+              <input type="hidden" id="f-operacao">
+              <button id="f-operacao-toggle" type="button" class="w-full pill rounded-lg px-3 py-2 text-left text-sm flex items-center justify-between gap-2 opacity-60 cursor-not-allowed" disabled>
+                <span id="f-operacao-summary" class="truncate text-slate-400">— selecione —</span>
+                <svg class="w-4 h-4 text-slate-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" /></svg>
+              </button>
+              <div id="f-operacao-panel" class="hidden card rounded-xl p-3 z-50 flex flex-col shadow-2xl max-h-80"></div>
+            </div>
           </div>
           <div class="lg:col-span-2">
             <label class="block text-sm font-medium text-slate-400 mb-1">Páginas de Queda</label>
@@ -106,7 +118,7 @@
               <button id="pq-toggle" type="button" class="w-full pill rounded-lg px-3 py-2 text-left text-sm" aria-haspopup="true" aria-expanded="false">
                 <span id="pq-summary" class="text-slate-300">— selecione —</span>
               </button>
-              <div id="pq-panel" class="hidden absolute left-0 right-0 mt-1 card rounded-xl p-3 z-50 flex flex-col"></div>
+              <div id="pq-panel" class="hidden card rounded-xl p-3 z-50 flex flex-col shadow-2xl max-h-80"></div>
             </div>
           </div>
           <div>
@@ -167,30 +179,1012 @@
                   <option>ActiveView</option>
               </select>
           </div>
+          <div>
+              <label class="block text-sm text-slate-400 mb-1">Moeda</label>
+              <select id="cfg-moeda" class="w-full pill rounded-lg px-3 py-2">
+                  <option value="USD" selected>USD</option>
+                  <option value="BRL">BRL</option>
+              </select>
+          </div>
           <div class="md:col-span-4 flex gap-2"><button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-xl" id="btn-salvar">Salvar</button><button type="button" class="pill px-4 py-2 rounded-xl" id="btn-limpar">Limpar</button></div>
         </form>
       </div>
       <div class="card rounded-2xl p-6">
         <h3 class="text-base font-bold text-slate-100 mb-3">Itens Configurados</h3>
-        <div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left font-semibold py-2 px-2">Pessoa</th><th class="text-left font-semibold py-2 px-2">Operação</th><th class="text-left font-semibold py-2 px-2">Página</th><th class="text-left font-semibold py-2 px-2">Parte</th><th class="text-left font-semibold py-2 px-2">Canal</th><th class="text-left font-semibold py-2 px-2">URLs</th><th class="text-left font-semibold py-2 px-2">Rede</th><th class="text-left font-semibold py-2 px-2">Ações</th></tr></thead><tbody id="cfg-list" class="align-top"></tbody></table></div>
+        <div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left font-semibold py-2 px-2">Pessoa</th><th class="text-left font-semibold py-2 px-2">Operação</th><th class="text-left font-semibold py-2 px-2">Página</th><th class="text-left font-semibold py-2 px-2">Parte</th><th class="text-left font-semibold py-2 px-2">Canal</th><th class="text-left font-semibold py-2 px-2">URLs</th><th class="text-left font-semibold py-2 px-2">Rede</th><th class="text-left font-semibold py-2 px-2">Moeda</th><th class="text-left font-semibold py-2 px-2">Ações</th></tr></thead><tbody id="cfg-list" class="align-top"></tbody></table></div>
       </div>
     </section>
+
+    <section id="view-coord" class="hidden fade-in space-y-6">
+      <div class="card rounded-2xl p-6 space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <h2 class="text-lg font-bold text-slate-100">Visão de Coordenação</h2>
+          <span class="text-xs text-slate-400">Acesso restrito · Sugestões baseadas nas últimas 4 horas (descartando a mais recente)</span>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-1">Pessoa</label>
+            <select id="coord-pessoa" class="w-full pill rounded-lg px-3 py-2 text-sm"></select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-1">Agrupamento</label>
+            <select id="coord-agrupamento" class="w-full pill rounded-lg px-3 py-2 text-sm">
+              <option value="day">Total do dia</option>
+              <option value="last6h">Últimas 6 horas</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end">
+          <button id="coord-btn-carregar" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-xl shadow-lg shadow-indigo-900/40 transition-all">Atualizar visão</button>
+        </div>
+      </div>
+      <div id="coord-results" class="space-y-6"></div>
+    </section>
   </div>
-  
+
   <div id="toast-container"></div>
-  
+
+  <div id="currency-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
+    <div class="card w-full max-w-md rounded-2xl p-6 text-slate-200 border border-amber-500/40 bg-slate-900/80">
+      <h3 class="text-lg font-semibold text-amber-300 mb-3">Atenção com a moeda</h3>
+      <p id="currency-modal-message" class="text-sm text-slate-300">
+        A precificação desse site deverá ser feita em Real, portanto, converta os valores para Real antes de fazer a precificação.
+      </p>
+      <div class="mt-6 flex justify-end gap-3">
+        <button id="currency-modal-cancel" type="button" class="pill px-4 py-2 rounded-xl text-sm">Cancelar</button>
+        <button id="currency-modal-accept" type="button" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-4 py-2 rounded-xl text-sm">Entendi</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="coord-password-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
+    <div class="card w-full max-w-sm rounded-2xl p-6 text-slate-200 border border-indigo-500/40 bg-slate-900/80 space-y-4">
+      <div>
+        <h3 class="text-lg font-semibold text-indigo-300">Área restrita</h3>
+        <p class="text-sm text-slate-300 mt-1">Informe a senha de coordenação para acessar essa aba.</p>
+      </div>
+      <div>
+        <label for="coord-password-input" class="block text-xs uppercase tracking-wide text-slate-400 mb-1">Senha</label>
+        <input id="coord-password-input" type="password" class="w-full pill rounded-lg px-3 py-2 text-sm" autocomplete="off" placeholder="Digite a senha" />
+        <p id="coord-password-error" class="hidden text-xs text-rose-400 mt-2">Senha incorreta. Tente novamente.</p>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button id="coord-password-cancel" class="pill px-4 py-2 rounded-xl text-sm">Cancelar</button>
+        <button id="coord-password-confirm" class="bg-indigo-500 hover:bg-indigo-400 text-white font-semibold px-4 py-2 rounded-xl text-sm">Acessar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     function byId(s){ return document.getElementById(s); }
     function num(n, d){ if(d===undefined) d=2; return (n==null?0:n).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}); }
     function pct(n, d){ if(d===undefined) d=1; return num(n,d)+'%'; }
     function money(n, d){ if(d===undefined) d=2; return '$'+num(n,d); }
+    function escapeHtml(str){ return String(str==null?'':str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+    function sha256Hex(str){
+        if (window.crypto && window.crypto.subtle && window.TextEncoder) {
+            return window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function(buffer){
+                var bytes = Array.from(new Uint8Array(buffer));
+                return bytes.map(function(b){ return b.toString(16).padStart(2, '0'); }).join('');
+            });
+        }
+        return Promise.resolve(fallbackHash(str));
+    }
+
+    function fallbackHash(str){
+        var hash = 0;
+        for (var i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return (hash >>> 0).toString(16).padStart(8, '0');
+    }
+
+    function verifyCoordPassword(value){
+        if (!value) return Promise.resolve(false);
+        return sha256Hex('coord::' + value).then(function(result){
+            if (result === CoordAccess.hash) return true;
+            if (CoordAccess.fallback && result === CoordAccess.fallback) return true;
+            return false;
+        }).catch(function(){ return false; });
+    }
+
+    var SELECT_MODELS = {};
+    var ACTIVE_SEARCHABLE = null;
+
+    function initSearchableSelect(selectId, placeholder){
+        var model = SELECT_MODELS[selectId];
+        if (!model) {
+            model = SELECT_MODELS[selectId] = {
+                id: selectId,
+                placeholder: placeholder === undefined ? '— selecione —' : placeholder,
+                source: [],
+                searchTerm: '',
+                value: '',
+                disabled: false,
+                open: false,
+                onChange: null,
+                searchPlaceholder: selectId === 'f-pessoa' ? 'Pesquisar pessoas...' : (selectId === 'f-operacao' ? 'Pesquisar operações...' : 'Pesquisar...')
+            };
+        } else if (placeholder !== undefined) {
+            model.placeholder = placeholder;
+        }
+
+        model.toggle = byId(selectId + '-toggle');
+        model.panel = byId(selectId + '-panel');
+        model.summary = byId(selectId + '-summary');
+        model.hidden = byId(selectId);
+
+        if (model.panel && !model.panel.dataset.floating) {
+            model.panel.dataset.floating = 'true';
+            model.panel.classList.add('hidden');
+            model.panel.style.position = 'fixed';
+            model.panel.style.maxHeight = '320px';
+            model.panel.style.overflowY = 'auto';
+            model.panel.style.zIndex = 70;
+            model.panel.addEventListener('click', function(evt){ evt.stopPropagation(); });
+            document.body.appendChild(model.panel);
+        }
+
+        if (model.toggle && !model.toggle.dataset.bound) {
+            model.toggle.dataset.bound = 'true';
+            model.toggle.addEventListener('click', function(evt){
+                evt.stopPropagation();
+                if (model.disabled) return;
+                if (model.open) closeSearchableSelect(selectId);
+                else openSearchableSelect(selectId);
+            });
+        }
+
+        updateSearchableSummary(selectId);
+        updateSearchableToggleState(selectId);
+    }
+
+    function openSearchableSelect(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model || model.disabled) return;
+        if (ACTIVE_SEARCHABLE && ACTIVE_SEARCHABLE !== selectId) {
+            closeSearchableSelect(ACTIVE_SEARCHABLE);
+        }
+        var panel = model.panel;
+        if (!panel) return;
+        model.open = true;
+        ACTIVE_SEARCHABLE = selectId;
+        renderSearchablePanel(selectId);
+        panel.style.visibility = 'hidden';
+        panel.classList.remove('hidden');
+        positionSearchablePanel(selectId);
+        panel.style.visibility = '';
+        var searchInput = panel.querySelector('#' + selectId + '-search');
+        if (searchInput) {
+            searchInput.focus();
+            var len = searchInput.value.length;
+            try { searchInput.setSelectionRange(len, len); } catch(err) {}
+        }
+    }
+
+    function closeSearchableSelect(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var panel = model.panel;
+        model.open = false;
+        if (panel) panel.classList.add('hidden');
+        if (ACTIVE_SEARCHABLE === selectId) ACTIVE_SEARCHABLE = null;
+    }
+
+    function positionSearchablePanel(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var panel = model.panel;
+        var toggle = model.toggle;
+        if (!panel || !toggle || panel.classList.contains('hidden')) return;
+        var rect = toggle.getBoundingClientRect();
+        var desiredWidth = Math.max(rect.width, 240);
+        panel.style.minWidth = desiredWidth + 'px';
+        panel.style.maxWidth = '420px';
+        panel.style.width = Math.min(desiredWidth, 420) + 'px';
+        var panelWidth = panel.offsetWidth || Math.min(desiredWidth, 420);
+        var left = rect.left;
+        var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        if (left + panelWidth > viewportWidth - 16) {
+            left = Math.max(16, viewportWidth - panelWidth - 16);
+        }
+        panel.style.left = left + 'px';
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        var panelHeight = panel.offsetHeight;
+        var top = rect.bottom + 6;
+        if (panelHeight && (top + panelHeight > viewportHeight - 16)) {
+            if ((rect.top - 6) - panelHeight >= 16) {
+                top = rect.top - panelHeight - 6;
+            } else {
+                top = Math.max(16, viewportHeight - panelHeight - 16);
+            }
+        }
+        if (top < 16) top = 16;
+        panel.style.top = top + 'px';
+    }
+
+    function renderSearchablePanel(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model || !model.panel) return;
+        var searchId = selectId + '-search';
+        model.panel.innerHTML = '';
+        var searchInput = document.createElement('input');
+        searchInput.id = searchId;
+        searchInput.type = 'text';
+        searchInput.className = 'pill w-full px-3 py-2 mb-2 text-sm';
+        searchInput.placeholder = model.searchPlaceholder || 'Pesquisar...';
+        searchInput.value = model.searchTerm || '';
+        searchInput.addEventListener('input', function(){
+            model.searchTerm = this.value || '';
+            renderSearchableOptions(selectId);
+        });
+        model.panel.appendChild(searchInput);
+
+        var optionsHost = document.createElement('div');
+        optionsHost.id = selectId + '-options';
+        optionsHost.className = 'flex flex-col gap-1 max-h-72 overflow-auto pr-1';
+        model.panel.appendChild(optionsHost);
+
+        renderSearchableOptions(selectId);
+        positionSearchablePanel(selectId);
+    }
+
+    function renderSearchableOptions(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var container = byId(selectId + '-options');
+        if (!container) return;
+        var term = (model.searchTerm || '').toLowerCase();
+        var filtered = model.source.filter(function(opt){
+            return !term || String(opt).toLowerCase().indexOf(term) !== -1;
+        });
+        container.innerHTML = '';
+        if (!filtered.length) {
+            var empty = document.createElement('div');
+            empty.className = 'text-sm text-slate-400 px-2 py-3';
+            empty.textContent = 'Nenhum resultado encontrado.';
+            container.appendChild(empty);
+            positionSearchablePanel(selectId);
+            return;
+        }
+        filtered.forEach(function(opt){
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = opt;
+            btn.className = 'text-left w-full px-2 py-2 rounded-md text-sm transition-colors ' + (model.value === opt ? 'bg-slate-700/60 text-white' : 'text-slate-200 hover:bg-slate-700/50');
+            btn.addEventListener('click', function(){
+                setSearchableValue(selectId, opt, false);
+                closeSearchableSelect(selectId);
+            });
+            container.appendChild(btn);
+        });
+        positionSearchablePanel(selectId);
+    }
+
+    function updateSearchableSummary(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var summary = model.summary;
+        if (!summary) return;
+        var value = model.value;
+        summary.textContent = value ? value : (model.placeholder || '— selecione —');
+    }
+
+    function updateSearchableToggleState(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var toggle = model.toggle;
+        if (toggle) {
+            toggle.disabled = !!model.disabled;
+            toggle.classList.toggle('opacity-60', !!model.disabled);
+            toggle.classList.toggle('cursor-not-allowed', !!model.disabled);
+        }
+        var summary = model.summary;
+        if (summary) {
+            if (model.disabled) {
+                summary.classList.remove('text-slate-300');
+                summary.classList.add('text-slate-400');
+            } else {
+                summary.classList.remove('text-slate-400');
+                summary.classList.add('text-slate-300');
+            }
+        }
+    }
+
+    function setSearchableOptions(selectId, options, preserveSearch){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        model.source = (options || []).slice();
+        if (!preserveSearch) {
+            model.searchTerm = '';
+        }
+        if (model.value && model.source.indexOf(model.value) === -1) {
+            setSearchableValue(selectId, '', true);
+        } else {
+            updateSearchableSummary(selectId);
+        }
+        if (model.open) {
+            renderSearchableOptions(selectId);
+        }
+    }
+
+    function setSearchableValue(selectId, value, silent){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var normalized = value && model.source.indexOf(value) !== -1 ? value : '';
+        model.value = normalized;
+        if (model.hidden) {
+            model.hidden.value = normalized;
+        }
+        updateSearchableSummary(selectId);
+        if (!silent && typeof model.onChange === 'function') {
+            model.onChange(normalized);
+        }
+        if (model.open) {
+            renderSearchableOptions(selectId);
+        }
+    }
+
+    function getSearchableValue(selectId){
+        var model = SELECT_MODELS[selectId];
+        return model ? (model.value || '') : '';
+    }
+
+    function setSearchableOnChange(selectId, handler){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        model.onChange = handler;
+    }
+
+    function setSearchableDisabled(selectId, disabled){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        model.disabled = !!disabled;
+        if (disabled) {
+            closeSearchableSelect(selectId);
+        }
+        updateSearchableToggleState(selectId);
+    }
+
+    document.addEventListener('click', function(evt){
+        if (!ACTIVE_SEARCHABLE) return;
+        var model = SELECT_MODELS[ACTIVE_SEARCHABLE];
+        if (!model) return;
+        var toggle = model.toggle;
+        var panel = model.panel;
+        if ((toggle && toggle.contains(evt.target)) || (panel && panel.contains(evt.target))) return;
+        closeSearchableSelect(ACTIVE_SEARCHABLE);
+    });
+
+    window.addEventListener('resize', function(){
+        if (ACTIVE_SEARCHABLE) positionSearchablePanel(ACTIVE_SEARCHABLE);
+    });
+
+    window.addEventListener('scroll', function(){
+        if (ACTIVE_SEARCHABLE) positionSearchablePanel(ACTIVE_SEARCHABLE);
+    }, true);
+
+    function getBlockMetricValue(entry, metric){
+        if (metric === 'page') return String(entry && entry.page ? entry.page : '');
+        var metrics = entry && entry.metrics ? entry.metrics : {};
+        var value = Number(metrics[metric]);
+        if (!isFinite(value)) value = 0;
+        return value;
+    }
+
+    function sortBlockEntries(list, state){
+        var metric = state && state.metric ? state.metric : 'revenue';
+        var dir = state && state.dir === 'asc' ? 1 : -1;
+        return (list || []).slice().sort(function(a, b){
+            if (metric === 'page') {
+                var cmp = String(a && a.page ? a.page : '').localeCompare(String(b && b.page ? b.page : ''), 'pt-BR');
+                if (cmp !== 0) return cmp * dir;
+                var fallbackA = getBlockMetricValue(a, 'revenue');
+                var fallbackB = getBlockMetricValue(b, 'revenue');
+                if (fallbackA < fallbackB) return -1;
+                if (fallbackA > fallbackB) return 1;
+                return 0;
+            }
+            var valA = getBlockMetricValue(a, metric);
+            var valB = getBlockMetricValue(b, metric);
+            if (valA < valB) return -1 * dir;
+            if (valA > valB) return 1 * dir;
+            return String(a && a.page ? a.page : '').localeCompare(String(b && b.page ? b.page : ''), 'pt-BR');
+        });
+    }
+
+    function blockSortIndicator(state, key){
+        if (!state || state.metric !== key) return '';
+        return state.dir === 'asc' ? ' ▲' : ' ▼';
+    }
+
+    function updateBlockSortState(state, key){
+        if (!state || !key) return;
+        if (state.metric === key) {
+            state.dir = (state.dir === 'asc') ? 'desc' : 'asc';
+        } else {
+            state.metric = key;
+            state.dir = (key === 'page') ? 'asc' : 'desc';
+        }
+    }
+
+    var CurrencyModal = { element: null, acceptButton: null, cancelButton: null, onAccept: null };
+
+    function setupCurrencyModal(){
+        CurrencyModal.element = byId('currency-modal');
+        CurrencyModal.acceptButton = byId('currency-modal-accept');
+        CurrencyModal.cancelButton = byId('currency-modal-cancel');
+        if (CurrencyModal.acceptButton) {
+            CurrencyModal.acceptButton.onclick = function(){
+                var cb = CurrencyModal.onAccept;
+                hideCurrencyModal();
+                if (typeof cb === 'function') cb();
+            };
+        }
+        if (CurrencyModal.cancelButton) {
+            CurrencyModal.cancelButton.onclick = hideCurrencyModal;
+        }
+        if (CurrencyModal.element) {
+            CurrencyModal.element.addEventListener('click', function(evt){
+                if (evt.target === CurrencyModal.element) hideCurrencyModal();
+            });
+        }
+    }
+
+    function showCurrencyModal(onAccept){
+        if (!CurrencyModal.element) setupCurrencyModal();
+        CurrencyModal.onAccept = onAccept;
+        if (CurrencyModal.element) CurrencyModal.element.classList.remove('hidden');
+    }
+
+    function hideCurrencyModal(){
+        if (CurrencyModal.element) CurrencyModal.element.classList.add('hidden');
+        CurrencyModal.onAccept = null;
+    }
+
+    function showCoordPasswordModal(onSuccess){
+        CoordAccess.pending = (typeof onSuccess === 'function') ? onSuccess : null;
+        var modal = byId('coord-password-modal');
+        var input = byId('coord-password-input');
+        var error = byId('coord-password-error');
+        if (error) error.classList.add('hidden');
+        if (modal) modal.classList.remove('hidden');
+        if (input) {
+            input.value = '';
+            setTimeout(function(){ input.focus(); }, 50);
+        }
+    }
+
+    function hideCoordPasswordModal(){
+        var modal = byId('coord-password-modal');
+        if (modal) modal.classList.add('hidden');
+        var input = byId('coord-password-input');
+        if (input) input.value = '';
+        var error = byId('coord-password-error');
+        if (error) error.classList.add('hidden');
+        var btn = byId('coord-password-confirm');
+        if (btn) {
+            btn.disabled = false;
+            if (btn.dataset.originalText) btn.textContent = btn.dataset.originalText;
+        }
+        CoordAccess.verifying = false;
+        CoordAccess.pending = null;
+    }
+
+    function setupCoordinationAccess(){
+        var modal = byId('coord-password-modal');
+        if (modal) {
+            modal.addEventListener('click', function(evt){ if (evt.target === modal) hideCoordPasswordModal(); });
+        }
+        var btnConfirm = byId('coord-password-confirm');
+        if (btnConfirm) {
+            btnConfirm.onclick = function(){
+                if (CoordAccess.verifying) return;
+                var input = byId('coord-password-input');
+                var error = byId('coord-password-error');
+                var value = input ? String(input.value || '').trim() : '';
+                if (!value) {
+                    if (error) error.classList.remove('hidden');
+                    if (input) input.focus();
+                    return;
+                }
+                if (error) error.classList.add('hidden');
+                CoordAccess.verifying = true;
+                var original = btnConfirm.dataset.originalText || btnConfirm.textContent;
+                btnConfirm.dataset.originalText = original;
+                btnConfirm.textContent = 'Verificando...';
+                btnConfirm.disabled = true;
+                verifyCoordPassword(value).then(function(valid){
+                    CoordAccess.verifying = false;
+                    btnConfirm.disabled = false;
+                    btnConfirm.textContent = btnConfirm.dataset.originalText || original;
+                    if (valid) {
+                        CoordAccess.granted = true;
+                        var cb = CoordAccess.pending;
+                        hideCoordPasswordModal();
+                        CoordAccess.pending = null;
+                        if (typeof cb === 'function') cb();
+                    } else {
+                        if (error) error.classList.remove('hidden');
+                        if (input) {
+                            input.focus();
+                            input.select();
+                        }
+                    }
+                }).catch(function(){
+                    CoordAccess.verifying = false;
+                    btnConfirm.disabled = false;
+                    btnConfirm.textContent = btnConfirm.dataset.originalText || original;
+                    if (error) error.classList.remove('hidden');
+                    if (input) {
+                        input.focus();
+                        input.select();
+                    }
+                });
+            };
+        }
+        var btnCancel = byId('coord-password-cancel');
+        if (btnCancel) {
+            btnCancel.onclick = function(){ hideCoordPasswordModal(); };
+        }
+        var input = byId('coord-password-input');
+        if (input) {
+            input.addEventListener('keydown', function(evt){
+                if (evt.key === 'Enter') {
+                    evt.preventDefault();
+                    var btn = byId('coord-password-confirm');
+                    if (btn) btn.click();
+                }
+            });
+        }
+        var coordAgr = byId('coord-agrupamento');
+        if (coordAgr) {
+            coordAgr.onchange = function(){ loadCoordinationData(); };
+        }
+        var coordBtn = byId('coord-btn-carregar');
+        if (coordBtn) {
+            coordBtn.onclick = function(){ loadCoordinationData(true); };
+        }
+    }
+
+    function slugifyCoord(value){
+        return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    }
+
+    function setCoordinationLoading(message){
+        var container = byId('coord-results');
+        if (!container) return;
+        container.innerHTML = '<div class="card rounded-2xl p-6 text-slate-200 border border-slate-700/60 bg-slate-900/40">'+escapeHtml(message || 'Carregando...')+'</div>';
+    }
+
+    function loadCoordinationData(forceReload){
+        if (!CoordAccess.granted) return;
+        var pessoaSel = byId('coord-pessoa');
+        var pessoa = pessoaSel ? pessoaSel.value : '';
+        var agrupSel = byId('coord-agrupamento');
+        var agrupamento = agrupSel ? agrupSel.value : 'day';
+        if (!pessoa) {
+            renderCoordination({ operations: [], message: 'Selecione uma pessoa para visualizar os dados.' });
+            return;
+        }
+        if (COORD.loading && !forceReload) return;
+        COORD.loading = true;
+        setCoordinationLoading('Carregando visão de coordenação...');
+        google.script.run
+            .withSuccessHandler(function(res){
+                COORD.loading = false;
+                renderCoordination(res || { operations: [] });
+            })
+            .withFailureHandler(function(err){
+                COORD.loading = false;
+                renderCoordination({ operations: [], error: err && err.message ? err.message : 'Erro ao carregar os dados.' });
+            })
+            .getCoordinationData({ pessoa: pessoa, agrupamento: agrupamento });
+    }
+
+    function updateCoordinationOperation(opName){
+        if (!opName) return;
+        var op = COORD.operationMap[opName];
+        if (!op) return;
+        var container = byId('coord-table-' + slugifyCoord(opName));
+        if (!container) return;
+        container.innerHTML = buildCoordinationTable(op, COORD.cpcTargets[opName]);
+    }
+
+    function renderCoordination(res){
+        var container = byId('coord-results');
+        if (!container) return;
+        if (!CoordAccess.granted) {
+            container.innerHTML = '<div class="card rounded-2xl p-6 text-slate-200 border border-slate-700/60 bg-slate-900/40">Área restrita. Informe a senha para visualizar.</div>';
+            return;
+        }
+        if (res && res.error) {
+            container.innerHTML = '<div class="card rounded-2xl p-6 border border-rose-500/40 bg-rose-900/20 text-rose-100">'+escapeHtml(res.error)+'</div>';
+            return;
+        }
+        var pessoaSel = byId('coord-pessoa');
+        var pessoa = pessoaSel ? pessoaSel.value : '';
+        if (!pessoa || (res && res.message)) {
+            var msg = res && res.message ? res.message : 'Selecione uma pessoa para visualizar os dados.';
+            container.innerHTML = '<div class="card rounded-2xl p-6 text-slate-200 border border-slate-700/60 bg-slate-900/40">'+escapeHtml(msg)+'</div>';
+            return;
+        }
+        COORD.lastResponse = res;
+        var operations = (res && res.operations) ? res.operations.slice() : [];
+        if (!operations.length) {
+            container.innerHTML = '<div class="card rounded-2xl p-6 text-slate-200 border border-slate-700/60 bg-slate-900/40">Nenhuma operação configurada para essa pessoa no período selecionado.</div>';
+            return;
+        }
+        operations.sort(function(a,b){ return String(a.operacao||'').localeCompare(String(b.operacao||''), 'pt-BR'); });
+        COORD.operations = operations;
+        COORD.operationMap = {};
+        var frag = document.createDocumentFragment();
+        operations.forEach(function(op){
+            var opName = op.operacao || 'Operação';
+            COORD.operationMap[opName] = op;
+            var card = document.createElement('div');
+            card.className = 'card rounded-2xl p-6 space-y-4';
+
+            var header = document.createElement('div');
+            header.className = 'flex flex-wrap items-center justify-between gap-3';
+            var title = document.createElement('div');
+            title.className = 'text-lg font-bold text-slate-100';
+            title.textContent = opName;
+            header.appendChild(title);
+
+            var inputWrap = document.createElement('label');
+            inputWrap.className = 'flex items-center gap-2 text-sm text-slate-300';
+            inputWrap.innerHTML = '<span>CPC Alvo</span>';
+            var input = document.createElement('input');
+            input.type = 'number';
+            input.step = '0.01';
+            input.placeholder = '0.00';
+            input.className = 'pill rounded-lg px-3 py-2 text-sm w-28';
+            if (COORD.cpcTargets.hasOwnProperty(opName) && COORD.cpcTargets[opName] !== undefined) {
+                var val = COORD.cpcTargets[opName];
+                input.value = (val === null || val === undefined) ? '' : val;
+            }
+            input.dataset.operation = opName;
+            input.addEventListener('input', function(){
+                var name = this.dataset.operation;
+                if (!name) return;
+                var v = parseFloat(this.value);
+                if (isNaN(v)) {
+                    delete COORD.cpcTargets[name];
+                } else {
+                    COORD.cpcTargets[name] = v;
+                }
+                updateCoordinationOperation(name);
+            });
+            input.addEventListener('blur', function(){ updateCoordinationOperation(this.dataset.operation); });
+            inputWrap.appendChild(input);
+            header.appendChild(inputWrap);
+            card.appendChild(header);
+
+            var subtitle = document.createElement('div');
+            subtitle.className = 'text-sm font-semibold text-slate-300 uppercase tracking-wide';
+            subtitle.textContent = 'Análise de comparação por bloco';
+            card.appendChild(subtitle);
+
+            var tableContainer = document.createElement('div');
+            var slug = slugifyCoord(opName);
+            tableContainer.id = 'coord-table-' + slug;
+            tableContainer.innerHTML = buildCoordinationTable(op, COORD.cpcTargets[opName]);
+            card.appendChild(tableContainer);
+
+            frag.appendChild(card);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(frag);
+    }
+
+    function rerenderCoordination(){
+        if (!CoordAccess.granted) return;
+        if (COORD.lastResponse) {
+            renderCoordination(COORD.lastResponse);
+        }
+    }
+
+    function renderCoordinationSuggestionCell(text){
+        if (!text) {
+            return '<div class="text-xs text-slate-400">Sem sugestão disponível</div>';
+        }
+        var parts = String(text).split(' — ');
+        var main = parts.shift() || '';
+        var detail = parts.join(' — ');
+        var palette = {
+            wrapper: 'border border-slate-700/60 bg-slate-800/40',
+            action: 'text-slate-200',
+            detail: 'text-slate-300'
+        };
+        if (/aumentar/i.test(main)) {
+            palette = {
+                wrapper: 'border border-emerald-500/40 bg-emerald-500/10',
+                action: 'text-emerald-200',
+                detail: 'text-emerald-100'
+            };
+        } else if (/reduzir/i.test(main)) {
+            palette = {
+                wrapper: 'border border-rose-500/40 bg-rose-500/10',
+                action: 'text-rose-200',
+                detail: 'text-rose-100'
+            };
+        } else if (/manter/i.test(main)) {
+            palette = {
+                wrapper: 'border border-amber-500/40 bg-amber-500/10',
+                action: 'text-amber-200',
+                detail: 'text-amber-100'
+            };
+        }
+        var html = '<div class="rounded-lg px-3 py-2 '+palette.wrapper+'">'
+            + '<div class="text-sm font-semibold '+palette.action+'">'+escapeHtml(main || text)+'</div>';
+        if (detail) {
+            html += '<div class="text-xs mt-1 leading-snug '+palette.detail+'">'+escapeHtml(detail)+'</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function buildCoordinationTable(op, targetValue){
+        var blocks = (op && op.blocks) ? op.blocks.slice() : [];
+        if (!blocks.length) {
+            return '<div class="card rounded-xl p-4 border border-slate-700/60 bg-slate-900/40 text-sm text-slate-300">Sem dados disponíveis para esta operação nas últimas horas.</div>';
+        }
+        blocks.sort(function(a,b){
+            var pageA = String(a.page||'');
+            var pageB = String(b.page||'');
+            if (pageA !== pageB) return pageA.localeCompare(pageB, 'pt-BR');
+            return String(a.label||'').localeCompare(String(b.label||''), 'pt-BR');
+        });
+        var basisMap = {};
+        blocks.forEach(function(block){
+            basisMap[String(block.page||'')+'||'+String(block.label||'')] = block.suggestionBasis || {};
+        });
+        var target = parseFloat(targetValue);
+        if (!isFinite(target)) target = NaN;
+
+        var grouped = { Quiz: {}, P1: {}, P2: {} };
+        blocks.forEach(function(block){
+            var part = block.parte || '';
+            if (!grouped[part]) grouped[part] = {};
+            var label = block.label || '-';
+            if (!grouped[part][label]) grouped[part][label] = [];
+            var metrics = block.metrics || {};
+            grouped[part][label].push({
+                page: block.page || '-',
+                metrics: metrics,
+                suggestion: getCoordinationSuggestion(block, target, basisMap)
+            });
+        });
+
+        function tableFor(list){
+            if (!list || !list.length) return '';
+            var sorted = sortBlockEntries(list, COORD_BLOCK_SORT);
+            var rows = sorted.map(function(item){
+                var metrics = item.metrics || {};
+                return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/50">'
+                    + '<td class="py-2 px-2 text-slate-300">'+escapeHtml(item.page || '-')+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+money(metrics.revenue || 0)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+num(metrics.impressions || 0, 0)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+num(metrics.clicks || 0, 0)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+pct(metrics.ctr || 0, 2)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+money(metrics.ecpm || 0)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+num(metrics.requests || 0, 0)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+pct(metrics.coverage || 0, 2)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+money(metrics.cpc || 0, 3)+'</td>'
+                    + '<td class="py-2 px-2 align-top">'+renderCoordinationSuggestionCell(item.suggestion)+'</td>'
+                    + '</tr>';
+            }).join('');
+            var columns = [
+                { key: 'page', label: 'Página', align: 'left', sortable: true },
+                { key: 'revenue', label: 'Receita', align: 'right', sortable: true },
+                { key: 'impressions', label: 'Impressões', align: 'right', sortable: true },
+                { key: 'clicks', label: 'Cliques', align: 'right', sortable: true },
+                { key: 'ctr', label: 'CTR', align: 'right', sortable: true },
+                { key: 'ecpm', label: 'eCPM', align: 'right', sortable: true },
+                { key: 'requests', label: 'Solicitações', align: 'right', sortable: true },
+                { key: 'coverage', label: 'Cobertura', align: 'right', sortable: true },
+                { key: 'cpc', label: 'CPC', align: 'right', sortable: true },
+                { key: null, label: 'Sugestão de precificação', align: 'left', sortable: false }
+            ];
+            var head = '<thead class="text-slate-400"><tr>' + columns.map(function(col){
+                var alignClass = col.align === 'right' ? 'text-right' : 'text-left';
+                if (!col.sortable) {
+                    return '<th class="'+alignClass+' py-2 px-2">'+col.label+'</th>';
+                }
+                return '<th class="'+alignClass+' py-2 px-2 cursor-pointer select-none" onclick="sortBlocksBy(\'coord\', \'"
+                    + col.key + '\')">' + col.label + blockSortIndicator(COORD_BLOCK_SORT, col.key) + '</th>';
+            }).join('') + '</tr></thead>';
+            return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+rows+'</tbody></table></div>';
+        }
+
+        function sectionHtml(partKey, title, borderClass, textClass){
+            var partGroups = grouped[partKey] || {};
+            var labelsInOrder = [];
+            if (partKey === 'Quiz') labelsInOrder = ['rewarded (Quiz)'];
+            if (partKey === 'P1') labelsInOrder = ['mob_top (P1)', 'mob_interstitial (P1)'];
+            if (partKey === 'P2') labelsInOrder = ['mob_top (P2)', 'mob_offerwall (P2)'];
+            var seen = {};
+            var innerHtml = '';
+            labelsInOrder.forEach(function(label){
+                if (partGroups[label] && partGroups[label].length) {
+                    innerHtml += '<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30">'
+                        + '<h5 class="font-semibold text-sm mb-2 text-slate-200">'+escapeHtml(label)+'</h5>'
+                        + tableFor(partGroups[label])
+                        + '</div>';
+                    seen[label] = true;
+                }
+            });
+            Object.keys(partGroups).sort(function(a,b){ return a.localeCompare(b, 'pt-BR'); }).forEach(function(label){
+                if (seen[label]) return;
+                innerHtml += '<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30">'
+                    + '<h5 class="font-semibold text-sm mb-2 text-slate-200">'+escapeHtml(label)+'</h5>'
+                    + tableFor(partGroups[label])
+                    + '</div>';
+            });
+            if (!innerHtml) return '';
+            return '<div class="card rounded-xl p-4 '+borderClass+'"><h4 class="text-base font-bold mb-3 '+textClass+'">'+title+'</h4><div class="space-y-4">'+innerHtml+'</div></div>';
+        }
+
+        var quizSection = sectionHtml('Quiz', 'Análise Quiz', 'border border-emerald-700 bg-emerald-900/10', 'text-emerald-300');
+        var p1Section = sectionHtml('P1', 'Análise P1', 'border border-blue-700 bg-blue-900/10', 'text-blue-300');
+        var p2Section = sectionHtml('P2', 'Análise P2', 'border border-teal-700 bg-teal-900/10', 'text-teal-300');
+
+        var content = '';
+        var anySection = false;
+        [quizSection, p1Section, p2Section].forEach(function(section){
+            if (section) {
+                content += section;
+                anySection = true;
+            }
+        });
+
+        if (!anySection) {
+            content += '<div class="card rounded-xl p-4 border border-slate-700/60 bg-slate-900/40 text-sm text-slate-300">Sem dados disponíveis para os blocos analisados.</div>';
+        }
+
+        return '<div class="card rounded-2xl p-5 space-y-6 bg-slate-900/40 border border-slate-700/60">'+content+'</div>';
+    }
+
+    function getCoordinationSuggestion(block, target, basisMap){
+        var label = String(block && block.label ? block.label : '');
+        var parte = String(block && block.parte ? block.parte : '');
+        var basis = block && block.suggestionBasis ? block.suggestionBasis : {};
+        if (!basis.hasData) {
+            return 'Sem dados recentes para sugerir ajuste';
+        }
+        var coverage = Number(basis.coverage || 0);
+        var cpc = Number(basis.cpc || 0);
+        var suggestion = '';
+        var reason = '';
+
+        function money3(val){ return money(val || 0, 3); }
+
+        if (parte === 'P1') {
+            var thresholds = label.toLowerCase().includes('interstitial') ? { high: 95, low: 80 } : { high: 80, low: 30 };
+            if (coverage > thresholds.high) {
+                suggestion = 'Aumentar a regra';
+                reason = 'Cobertura acima de '+thresholds.high+'%';
+            } else if (coverage < thresholds.low) {
+                suggestion = 'Reduzir a regra';
+                reason = 'Cobertura abaixo de '+thresholds.low+'%';
+            } else {
+                if (!isFinite(target) || target <= 0) {
+                    return 'Informe o CPC alvo para gerar uma sugestão';
+                }
+                if (cpc < target) {
+                    suggestion = 'Aumentar a regra';
+                    reason = 'CPC ('+money3(cpc)+') abaixo do alvo ('+money3(target)+')';
+                } else {
+                    suggestion = 'Manter a regra';
+                    reason = 'CPC ('+money3(cpc)+') dentro ou acima do alvo';
+                }
+            }
+        } else if (parte === 'P2' && label.toLowerCase().includes('mob_top')) {
+            if (coverage > 80) {
+                suggestion = 'Aumentar a regra';
+                reason = 'Cobertura acima de 80%';
+            } else if (coverage < 70) {
+                suggestion = 'Reduzir a regra';
+                reason = 'Cobertura abaixo de 70%';
+            } else {
+                suggestion = 'Manter a regra';
+                reason = 'Cobertura entre 70% e 80%';
+            }
+        } else if (parte === 'P2' && label.toLowerCase().includes('offerwall')) {
+            var ref = basisMap[String(block.page||'')+'||mob_top (P2)'];
+            if (!ref || !ref.hasData) {
+                return 'Sem referência do bloco mob_top (P2) para comparar';
+            }
+            var corr = Number(basis.cpcCorrigido || 0);
+            var refCpc = Number(ref.cpc || 0);
+            if (!(corr > 0)) {
+                return 'Sem dados de CPC corrigido suficientes';
+            }
+            if (corr < refCpc) {
+                suggestion = 'Aumentar a regra';
+                reason = 'CPC Corrigido ('+money3(corr)+') abaixo do mob_top P2 ('+money3(refCpc)+')';
+            } else {
+                suggestion = 'Manter a regra';
+                reason = 'CPC Corrigido maior ou igual ao mob_top P2';
+            }
+        } else if (parte === 'Quiz' && label.toLowerCase().includes('rewarded')) {
+            suggestion = 'Ajustar regra para CPC = CPA';
+            reason = 'Revisar valor de CPA antes de precificar';
+        }
+
+        if (!suggestion) return 'Sem sugestão disponível';
+        return suggestion + ' — ' + reason;
+    }
+
+    function getPricingSortState(network){
+        if(!PRICING_SORT[network]){
+            PRICING_SORT[network] = { by: 'urlPath', dir: 'asc', lastBlockId: null };
+        }
+        return PRICING_SORT[network];
+    }
+
+    function ensureTwoDecimals(value){
+        if (value === null || value === undefined) return '';
+        var normalized = String(value).trim();
+        if (!normalized) return '';
+        normalized = normalized.replace(/,/g,'.');
+        var num = parseFloat(normalized);
+        if (isNaN(num)) return '';
+        return num.toFixed(2);
+    }
+
+    function extractUtmSource(canal){
+        if(!canal) return '';
+        var normalized = String(canal).replace(/;/g,'&');
+        var match = normalized.match(/utm_source=([^&]+)/i);
+        if(match) return decodeURIComponent(match[1].replace(/\+/g,' '));
+        if(normalized.indexOf('=') === -1) return normalized;
+        var parts = normalized.split('=');
+        return decodeURIComponent(parts.pop().replace(/\+/g,' '));
+    }
+
+    function parseDomainAndPath(rawUrl){
+        if(!rawUrl) return { domain: '', path: '' };
+        var input = String(rawUrl).trim();
+        if(!/^https?:\/\//i.test(input)) input = 'https://' + input;
+        try {
+            var parsed = new URL(input);
+            var path = parsed.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+            return { domain: parsed.hostname.toLowerCase(), path: path };
+        } catch(err) {
+            var parts = String(rawUrl).split('/');
+            var domain = parts.shift() || '';
+            return { domain: domain.toLowerCase(), path: parts.join('/').replace(/^\/+/, '').replace(/\/+$/, '') };
+        }
+    }
 
     var CFG = { rows: [], pessoas: [], opsByPessoa: {}, paginasByOp: {} };
     var LAST_RES = null;
     var SORT = { by: 'revenue', dir: 'desc' };
-    var PRICING_SORT = { by: 'url', dir: 'asc', lastBlockId: null };
-    var PQ = { options: [], selected: [], open:false };
+    var PRICING_SORT = {};
+    var BLOCK_SORT = { metric: 'revenue', dir: 'desc' };
+    var COORD_BLOCK_SORT = { metric: 'revenue', dir: 'desc' };
+    var PQ = { options: [], selected: [], open:false, searchTerm: '' };
     var CHART = { inst: null };
+    var COORD = { operations: [], operationMap: {}, cpcTargets: {}, loading: false, lastResponse: null };
+    var CoordAccess = { granted: false, hash: '87402fdebedf4d5bf24d2f80aca3ae0197e8837d16a9c0155f366343c1f6a4bf', fallback: 'b10d26f7', pending: null, verifying: false };
+    var SYNC_TIMERS = {};
+
+    function sortBlocksBy(context, key){
+        if (!key) return;
+        if (context === 'coord') {
+            updateBlockSortState(COORD_BLOCK_SORT, key);
+            rerenderCoordination();
+        } else {
+            updateBlockSortState(BLOCK_SORT, key);
+            if (LAST_RES) renderDashboard(LAST_RES);
+        }
+    }
+    window.sortBlocksBy = sortBlocksBy;
 
     function showToast(message, type = 'info') {
         const container = byId('toast-container');
@@ -211,53 +1205,219 @@
     }
 
     (function(){
-      byId('tab-dash').onclick = function(){ byId('view-dash').classList.remove('hidden'); byId('view-conf').classList.add('hidden'); this.classList.add('bg-blue-600','text-white'); byId('tab-conf').classList.remove('bg-blue-600','text-white'); };
-      byId('tab-conf').onclick = function(){ byId('view-conf').classList.remove('hidden'); byId('view-dash').classList.add('hidden'); this.classList.add('bg-blue-600','text-white'); byId('tab-dash').classList.remove('bg-blue-600','text-white'); };
-      byId('sub-ana').onclick = function(){ byId('analysis-content').classList.remove('hidden'); byId('compare-content').classList.add('hidden'); this.classList.add('bg-teal-600','text-white'); byId('sub-comp').classList.remove('bg-teal-600','text-white'); };
-      byId('sub-comp').onclick = function(){ byId('compare-content').classList.remove('hidden'); byId('analysis-content').classList.add('hidden'); this.classList.add('bg-teal-600','text-white'); byId('sub-ana').classList.remove('bg-teal-600','text-white'); };
+      var tabMap = {
+        dash: { button: byId('tab-dash'), view: byId('view-dash') },
+        conf: { button: byId('tab-conf'), view: byId('view-conf') },
+        coord: { button: byId('tab-coord'), view: byId('view-coord') }
+      };
+
+      function setActiveTab(tab){
+        if (tab === 'coord' && !CoordAccess.granted) {
+          showCoordPasswordModal(function(){ setActiveTab('coord'); });
+          return;
+        }
+        Object.keys(tabMap).forEach(function(key){
+          var cfg = tabMap[key];
+          if (!cfg.button || !cfg.view) return;
+          var isActive = (key === tab);
+          cfg.view.classList.toggle('hidden', !isActive);
+          cfg.button.classList.toggle('bg-blue-600', isActive);
+          cfg.button.classList.toggle('text-white', isActive);
+          if (!isActive) {
+            cfg.button.classList.remove('bg-blue-600','text-white');
+          }
+        });
+        if (tab === 'coord') {
+          loadCoordinationData();
+        }
+      }
+
+      Object.keys(tabMap).forEach(function(key){
+        var cfg = tabMap[key];
+        if (!cfg.button) return;
+        cfg.button.onclick = function(){ setActiveTab(key); };
+      });
+
+      setActiveTab('dash');
+      setupCoordinationAccess();
+
+      var subAna = byId('sub-ana');
+      var subComp = byId('sub-comp');
+      if (subAna && subComp) {
+        subAna.onclick = function(){ byId('analysis-content').classList.remove('hidden'); byId('compare-content').classList.add('hidden'); this.classList.add('bg-teal-600','text-white'); subComp.classList.remove('bg-teal-600','text-white'); };
+        subComp.onclick = function(){ byId('compare-content').classList.remove('hidden'); byId('analysis-content').classList.add('hidden'); this.classList.add('bg-teal-600','text-white'); subAna.classList.remove('bg-teal-600','text-white'); };
+      }
     })();
 
     function loadConfig(){ google.script.run.withSuccessHandler(function(res){ CFG = res || {}; fillPessoa(res.pessoas || []); renderCfgTable(res.rows || []); }).getConfig(); }
 
     function fillPessoa(list){
-      var sel = byId('f-pessoa');
-      sel.innerHTML = '<option value="">— selecione —</option>' + (list||[]).map(function(p){return '<option>'+p+'</option>';}).join('');
-      sel.onchange = function(){
-        var ops = (CFG.opsByPessoa && CFG.opsByPessoa[this.value]) ? CFG.opsByPessoa[this.value] : [];
-        var elOp = byId('f-operacao');
-        elOp.disabled = !ops.length;
-        elOp.innerHTML = '<option value="">— selecione —</option>' + ops.map(function(o){return '<option>'+o+'</option>';}).join('');
+      setSearchableOptions('f-pessoa', list || []);
+      var currentPessoa = getSearchableValue('f-pessoa');
+      if (currentPessoa && (!list || list.indexOf(currentPessoa) === -1)) {
+        setSearchableValue('f-pessoa', '', true);
+        currentPessoa = '';
+      }
+
+      function applyOperacoes(pessoa){
+        var ops = (CFG.opsByPessoa && pessoa) ? (CFG.opsByPessoa[pessoa] || []) : [];
+        setSearchableOptions('f-operacao', ops || []);
+        var hasOps = ops && ops.length;
+        setSearchableDisabled('f-operacao', !hasOps);
+        if (!hasOps) {
+          setSearchableValue('f-operacao', '', true);
+          setPQOptions([]);
+        } else {
+          var currentOp = getSearchableValue('f-operacao');
+          if (ops.indexOf(currentOp) === -1) {
+            setSearchableValue('f-operacao', '', true);
+          }
+        }
+      }
+
+      setSearchableOnChange('f-pessoa', function(value){
+        applyOperacoes(value);
         resetPQ();
-      };
-      byId('f-operacao').onchange = function(){
-        var key = byId('f-pessoa').value+'||'+this.value;
+      });
+
+      setSearchableOnChange('f-operacao', function(value){
+        var pessoa = getSearchableValue('f-pessoa');
+        var key = pessoa + '||' + value;
         var pags = (CFG.paginasByOp && CFG.paginasByOp[key]) ? CFG.paginasByOp[key] : [];
         setPQOptions(pags);
-      };
+      });
+
+      applyOperacoes(currentPessoa);
+      var currentOperacao = getSearchableValue('f-operacao');
+      if (currentPessoa && currentOperacao) {
+        var initKey = currentPessoa + '||' + currentOperacao;
+        var initPags = (CFG.paginasByOp && CFG.paginasByOp[initKey]) ? CFG.paginasByOp[initKey] : [];
+        if (initPags.length) {
+          setPQOptions(initPags);
+        }
+      }
+
+      var coordSel = byId('coord-pessoa');
+      if (coordSel) {
+        var previous = coordSel.value;
+        coordSel.innerHTML = '<option value="">— selecione —</option>' + (list||[]).map(function(p){return '<option>'+escapeHtml(p)+'</option>';}).join('');
+        if (previous && list && list.indexOf(previous) >= 0) coordSel.value = previous;
+        coordSel.onchange = function(){ loadCoordinationData(); };
+      }
+    }
+
+    function positionPQPanel(){
+      var panel = byId('pq-panel');
+      var toggle = byId('pq-toggle');
+      if (!panel || !toggle || panel.classList.contains('hidden')) return;
+      var rect = toggle.getBoundingClientRect();
+      var desiredWidth = Math.max(rect.width, 260);
+      panel.style.minWidth = desiredWidth + 'px';
+      panel.style.maxWidth = '420px';
+      panel.style.width = Math.min(desiredWidth, 420) + 'px';
+      var panelWidth = panel.offsetWidth || Math.min(desiredWidth, 420);
+      var left = rect.left;
+      var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+      if (left + panelWidth > viewportWidth - 16) {
+        left = Math.max(16, viewportWidth - panelWidth - 16);
+      }
+      panel.style.left = left + 'px';
+      var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      var panelHeight = panel.offsetHeight;
+      var top = rect.bottom + 6;
+      if (panelHeight && (top + panelHeight > viewportHeight - 16)) {
+        if ((rect.top - 6) - panelHeight >= 16) {
+          top = rect.top - panelHeight - 6;
+        } else {
+          top = Math.max(16, viewportHeight - panelHeight - 16);
+        }
+      }
+      if (top < 16) top = 16;
+      panel.style.top = top + 'px';
     }
 
     function wirePQ(){
-      byId('pq-toggle').onclick = function(){ 
-        PQ.open = !PQ.open; 
-        byId('pq-panel').classList.toggle('hidden', !PQ.open); 
-        if (PQ.open) { 
-          renderPQOptions(); 
-          byId('pq-panel').querySelector('#pq-search').focus(); 
-        } 
-      };
-      document.addEventListener('click', function(e){ if (!byId('pq-select').contains(e.target)) { PQ.open = false; byId('pq-panel').classList.add('hidden'); } });
+      var toggle = byId('pq-toggle');
+      var panel = byId('pq-panel');
+      if (panel && !panel.dataset.floating) {
+        panel.dataset.floating = 'true';
+        panel.classList.add('hidden');
+        panel.style.position = 'fixed';
+        panel.style.maxHeight = '320px';
+        panel.style.overflowY = 'auto';
+        panel.style.zIndex = 70;
+        document.body.appendChild(panel);
+        panel.addEventListener('click', function(evt){ evt.stopPropagation(); });
+      }
+
+      function closePanel(){
+        PQ.open = false;
+        if (panel) panel.classList.add('hidden');
+      }
+
+      function openPanel(){
+        PQ.open = true;
+        renderPQOptions();
+        panel = byId('pq-panel');
+        if (!panel) return;
+        panel.style.visibility = 'hidden';
+        panel.classList.remove('hidden');
+        positionPQPanel();
+        panel.style.visibility = '';
+        var search = panel.querySelector('#pq-search');
+        if (search) {
+          search.focus();
+          var len = search.value.length;
+          try { search.setSelectionRange(len, len); } catch(err) {}
+        }
+      }
+
+      if (toggle) {
+        toggle.addEventListener('click', function(evt){
+          evt.stopPropagation();
+          if (PQ.open) closePanel();
+          else openPanel();
+        });
+      }
+
+      document.addEventListener('click', function(evt){
+        if (!PQ.open) return;
+        var tgl = byId('pq-toggle');
+        var pnl = byId('pq-panel');
+        if ((tgl && tgl.contains(evt.target)) || (pnl && pnl.contains(evt.target))) return;
+        closePanel();
+      });
+
+      window.addEventListener('resize', function(){ if (PQ.open) positionPQPanel(); });
+      window.addEventListener('scroll', function(){ if (PQ.open) positionPQPanel(); }, true);
     }
     function resetPQ(){ setPQOptions([]); }
-    function setPQOptions(arr){ PQ.options = (arr||[]).slice(); PQ.selected = []; updatePQSummary(); }
+    function setPQOptions(arr){
+      PQ.options = (arr||[]).slice();
+      PQ.selected = [];
+      PQ.searchTerm = '';
+      updatePQSummary();
+      var search = byId('pq-search');
+      if (search) search.value = '';
+      if (byId('pq-options-list')) updatePQOptionsList('');
+    }
     function updatePQSummary(){ var len=PQ.selected.length; var sum = len===0 ? '— selecione —' : (len===1 ? PQ.selected[0] : PQ.selected.slice(0,2).join(', ')+(len>2?' +'+(len-2):'')); byId('pq-summary').textContent = sum; }
     
+    function getVisiblePQOptions(term){
+      var normalized = (term || '').toLowerCase();
+      return PQ.options.filter(function(opt){
+        return !normalized || String(opt).toLowerCase().includes(normalized);
+      });
+    }
+
     function renderPQOptions(){
       var panel = byId('pq-panel');
-      
-      if (!panel.dataset.initialized) {
-        panel.innerHTML = `
+      if (!panel) return;
+
+      var activeSearch = PQ.searchTerm || '';
+      panel.innerHTML = `
           <input id="pq-search" type="text" class="pill w-full px-3 py-2 mb-2 text-sm" placeholder="Pesquisar páginas...">
-          <div id="pq-options-list" class="flex-grow overflow-auto space-y-1 max-h-60 pr-1"></div>
+          <div id="pq-options-list" class="flex-grow overflow-auto space-y-1 max-h-72 pr-1"></div>
           <div class="flex justify-between mt-2 pt-2 border-t border-slate-700/60 text-xs text-slate-400">
             <div class="flex gap-3">
               <button id="pq-all" type="button" class="underline hover:text-white">Selecionar visíveis</button>
@@ -265,87 +1425,81 @@
             </div>
             <button id="pq-clear-all" type="button" class="underline hover:text-rose-400">Limpar tudo</button>
           </div>`;
-        
-        panel.querySelector('#pq-search').oninput = function(){ updatePQOptionsList(this.value); };
-        panel.querySelector('#pq-all').onclick = function(){
-            var visibleOptions = PQ.options.filter(function(opt){
-                return String(opt).toLowerCase().includes(byId('pq-search').value.toLowerCase());
-            });
-            visibleOptions.forEach(function(opt){ if(!PQ.selected.includes(opt)) PQ.selected.push(opt); }); 
-            updatePQOptionsList(byId('pq-search').value); 
-            updatePQSummary(); 
-        };
-        panel.querySelector('#pq-none').onclick = function(){ 
-            var visibleOptions = PQ.options.filter(function(opt){
-                return String(opt).toLowerCase().includes(byId('pq-search').value.toLowerCase());
-            });
-            PQ.selected = PQ.selected.filter(function(sel){ return !visibleOptions.includes(sel); }); 
-            updatePQOptionsList(byId('pq-search').value);
-            updatePQSummary(); 
-        };
-        panel.querySelector('#pq-clear-all').onclick = function() {
-            PQ.selected = [];
-            updatePQOptionsList(byId('pq-search').value);
-            updatePQSummary();
-        };
-        panel.dataset.initialized = "true";
-      }
-      
-      updatePQOptionsList();
+
+      var searchInput = panel.querySelector('#pq-search');
+      searchInput.value = activeSearch;
+      searchInput.oninput = function(){ updatePQOptionsList(this.value); };
+
+      panel.querySelector('#pq-all').onclick = function(){
+        var visibleOptions = getVisiblePQOptions(PQ.searchTerm);
+        visibleOptions.forEach(function(opt){ if (!PQ.selected.includes(opt)) PQ.selected.push(opt); });
+        updatePQOptionsList(PQ.searchTerm);
+        updatePQSummary();
+      };
+      panel.querySelector('#pq-none').onclick = function(){
+        var visibleOptions = getVisiblePQOptions(PQ.searchTerm);
+        PQ.selected = PQ.selected.filter(function(sel){ return !visibleOptions.includes(sel); });
+        updatePQOptionsList(PQ.searchTerm);
+        updatePQSummary();
+      };
+      panel.querySelector('#pq-clear-all').onclick = function(){
+        PQ.selected = [];
+        updatePQOptionsList('');
+        updatePQSummary();
+      };
+
+      updatePQOptionsList(activeSearch);
+      positionPQPanel();
     }
-    
+
     function updatePQOptionsList(filterValue) {
-      filterValue = (filterValue === undefined ? (byId('pq-search')?.value || '') : filterValue).toLowerCase();
       var listContainer = byId('pq-options-list');
-      var visibleOptions = PQ.options.filter(function(x){return !filterValue || String(x).toLowerCase().includes(filterValue);});
-      
-      listContainer.innerHTML = visibleOptions.map(function(pg){ 
-        var checked = PQ.selected.includes(pg) ? 'checked' : ''; 
-        return '<label class="flex items-center gap-2 text-sm p-1.5 rounded-md hover:bg-slate-700/50 cursor-pointer"><input type="checkbox" value="'+pg+'" '+checked+'> <span>'+pg+'</span></label>'; 
+      if (!listContainer) return;
+
+      if (typeof filterValue === 'string') {
+        PQ.searchTerm = filterValue;
+      } else {
+        var searchInput = byId('pq-search');
+        PQ.searchTerm = searchInput ? searchInput.value : (PQ.searchTerm || '');
+      }
+
+      var searchInput = byId('pq-search');
+      if (searchInput && searchInput.value !== PQ.searchTerm) {
+        searchInput.value = PQ.searchTerm;
+      }
+
+      var visibleOptions = getVisiblePQOptions(PQ.searchTerm);
+
+      listContainer.innerHTML = visibleOptions.map(function(pg){
+        var checked = PQ.selected.includes(pg) ? 'checked' : '';
+        return '<label class="flex items-center gap-2 text-sm p-1.5 rounded-md hover:bg-slate-700/50 cursor-pointer"><input type="checkbox" value="'+pg+'" '+checked+'> <span>'+pg+'</span></label>';
       }).join('');
-      
-      listContainer.querySelectorAll('input[type=checkbox]').forEach(function(cb){ 
-        cb.onchange = function(){ 
+
+      listContainer.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+        cb.onchange = function(){
           var v = this.value;
-          var idx = PQ.selected.indexOf(v); 
+          var idx = PQ.selected.indexOf(v);
           if(this.checked && idx === -1) PQ.selected.push(v);
           else if (!this.checked && idx !== -1) PQ.selected.splice(idx, 1);
-          updatePQSummary(); 
-        }; 
+          updatePQSummary();
+        };
       });
+
+      updatePQSummary();
+      positionPQPanel();
     }
 
     function wireFilters(){
       byId('btn-aplicar').onclick = function(){
-        var params = { pessoa: byId('f-pessoa').value, operacao: byId('f-operacao').value, paginasSelecionadas: PQ.selected.slice(),
+        var params = { pessoa: getSearchableValue('f-pessoa'), operacao: getSearchableValue('f-operacao'), paginasSelecionadas: PQ.selected.slice(),
                        startDate: byId('f-start').value || '', endDate: byId('f-end').value || '', granularity: byId('f-gran').value || 'hour' };
-        if (!params.pessoa || !params.operacao || !params.paginasSelecionadas.length) { 
-            showToast('Selecione Pessoa, Operação e pelo menos uma Página de Queda.', 'error'); 
-            return; 
+        if (!params.pessoa || !params.operacao || !params.paginasSelecionadas.length) {
+            showToast('Selecione Pessoa, Operação e pelo menos uma Página de Queda.', 'error');
+            return;
         }
         google.script.run.withSuccessHandler(renderDashboard).getDashboardData(params);
       };
       
-      byId('btn-sync-adseleto').onclick = function() {
-        var btn = this;
-        var originalContent = btn.innerHTML;
-        btn.innerHTML = 'Sincronizando...';
-        btn.disabled = true;
-
-        const callbackHandler = function(response, isSuccess) {
-            try {
-                if (isSuccess) { showToast(response.message, response.ok ? 'success' : 'error'); } 
-                else { showToast('Erro de comunicação com o servidor:\n' + response.message, 'error'); }
-            } finally {
-                btn.innerHTML = originalContent;
-                btn.disabled = false;
-            }
-        };
-        google.script.run
-            .withSuccessHandler(function(res) { callbackHandler(res, true); })
-            .withFailureHandler(function(err) { callbackHandler(err, false); })
-            .runAdSeletoPricingUpdate();
-      };
     }
 
     function toggleSort(k) {
@@ -376,6 +1530,103 @@
         return (getValue(b, 'revenue') - getValue(a, 'revenue'));
       });
       return details;
+    }
+
+    function createCompareBlocksCard(compareBlocks){
+      var grouped = { P1: {}, P2: {}, Quiz: {} };
+      compareBlocks.forEach(function(r){
+        var part = r.parte || '';
+        if (!grouped[part]) grouped[part] = {};
+        var label = r.label || '-';
+        if (!grouped[part][label]) grouped[part][label] = [];
+        grouped[part][label].push(r);
+      });
+
+      function tableFor(list){
+        var rows = sortBlockEntries(list, BLOCK_SORT);
+        if (!rows.length) return '';
+        var body = rows.map(function(r){
+          var m = r.metrics || {};
+          return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60">'
+            + '<td class="py-2 pr-2">'+escapeHtml(r.page || '-')+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+money(m.revenue)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+num(m.impressions,0)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+num(m.clicks,0)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+pct(m.ctr,2)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+money(m.ecpm)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+num(m.requests,0)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+pct(m.coverage,2)+'</td>'
+            + '<td class="py-2 pr-2 text-right">'+money(m.cpc,3)+'</td>'
+            + '</tr>';
+        }).join('');
+        var columns = [
+          { key: 'page', label: 'Página', align: 'left' },
+          { key: 'revenue', label: 'Receita', align: 'right' },
+          { key: 'impressions', label: 'Impressões', align: 'right' },
+          { key: 'clicks', label: 'Cliques', align: 'right' },
+          { key: 'ctr', label: 'CTR', align: 'right' },
+          { key: 'ecpm', label: 'eCPM', align: 'right' },
+          { key: 'requests', label: 'Solicitações', align: 'right' },
+          { key: 'coverage', label: 'Cobertura', align: 'right' },
+          { key: 'cpc', label: 'CPC', align: 'right' }
+        ];
+        var head = '<thead class="text-slate-400"><tr>' + columns.map(function(col){
+          var alignClass = col.align === 'right' ? 'text-right' : 'text-left';
+          return '<th class="'+alignClass+' py-2 pr-2 cursor-pointer select-none" onclick="sortBlocksBy(\'cmp\', \'
+            + col.key + '\')">' + col.label + blockSortIndicator(BLOCK_SORT, col.key) + '</th>';
+        }).join('') + '</tr></thead>';
+        return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+body+'</tbody></table></div>';
+      }
+
+      function sectionHtml(partKey, title, borderClass, textClass){
+        var partGroups = grouped[partKey] || {};
+        var preferred = {
+          Quiz: ['rewarded (Quiz)'],
+          P1: ['mob_top (P1)', 'mob_interstitial (P1)'],
+          P2: ['mob_top (P2)', 'mob_offerwall (P2)']
+        };
+        var seen = {};
+        var inner = '';
+        (preferred[partKey] || []).forEach(function(label){
+          if (partGroups[label] && partGroups[label].length) {
+            inner += '<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30">'
+              + '<h5 class="font-semibold text-sm mb-2 text-slate-200">'+escapeHtml(label)+'</h5>'
+              + tableFor(partGroups[label])
+              + '</div>';
+            seen[label] = true;
+          }
+        });
+        Object.keys(partGroups).sort(function(a,b){ return a.localeCompare(b, 'pt-BR'); }).forEach(function(label){
+          if (seen[label]) return;
+          inner += '<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30">'
+            + '<h5 class="font-semibold text-sm mb-2 text-slate-200">'+escapeHtml(label)+'</h5>'
+            + tableFor(partGroups[label])
+            + '</div>';
+        });
+        if (!inner) return '';
+        return '<div class="card rounded-xl p-4 '+borderClass+'">'
+          + '<h4 class="text-base font-bold mb-3 '+textClass+'">'+title+'</h4>'
+          + '<div class="space-y-4">'+inner+'</div>'
+          + '</div>';
+      }
+
+      var quizSection = sectionHtml('Quiz', 'Análise Quiz', 'border border-emerald-700 bg-emerald-900/10', 'text-emerald-300');
+      var p1Section = sectionHtml('P1', 'Análise P1', 'border border-blue-700 bg-blue-900/10', 'text-blue-300');
+      var p2Section = sectionHtml('P2', 'Análise P2', 'border border-teal-700 bg-teal-900/10', 'text-teal-300');
+
+      var content = '';
+      [quizSection, p1Section, p2Section].forEach(function(section){ if (section) content += section; });
+      if (!content) {
+        content = '<div class="card rounded-xl p-4 border border-slate-700/60 bg-slate-900/40 text-sm text-slate-300">Sem dados disponíveis para os blocos analisados.</div>';
+      }
+
+      var cmpb = document.createElement('div');
+      cmpb.className = 'card rounded-2xl p-5 space-y-6';
+      cmpb.innerHTML = '<div class="flex flex-wrap items-center justify-between gap-3">'
+        + '<h3 class="text-lg font-bold text-slate-100">Comparativo por Blocos</h3>'
+        + '</div>'
+        + '<div class="space-y-6">'+content+'</div>';
+      return cmpb;
     }
 
     function renderDetailsTable(details, hourly){
@@ -440,6 +1691,8 @@
     
     function renderDashboard(res){
       LAST_RES = res;
+      LAST_RES.pricingRulesAdSeleto = res.pricingRulesAdSeleto || [];
+      LAST_RES.pricingRulesIgoal = res.pricingRulesIgoal || [];
       var hostA = byId('analysis-content'), hostC = byId('compare-content');
       hostA.innerHTML = ''; hostC.innerHTML = '';
       var hourly = (res.granularity === 'hour' || res.granularity === 'last6h');
@@ -479,7 +1732,9 @@
       if(res.compare&&res.compare.length){var cmp=document.createElement('div');cmp.className='card rounded-2xl p-5';cmp.innerHTML='<h3 class="text-lg font-bold mb-3">Comparativo — Total da Página</h3><div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">CPC</th><th class="text-right py-2 pr-2">RPS</th><th class="text-right py-2 pr-2">Taxa de interação</th></tr></thead><tbody>'+res.compare.map(function(r){return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(r.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(r.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(r.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(r.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(r.ecpm)+'</td><td class="py-2 pr-2 text-right">'+money(r.cpc,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.rps)+'</td><td class="py-2 pr-2 text-right">'+pct(r.interactionRate)+'</td></tr>';}).join('')+'</tbody></table></div>';hostC.appendChild(cmp);}
       var chartBox=document.createElement('div');chartBox.className='card rounded-2xl p-5';chartBox.innerHTML='<div class="flex items-center justify-between gap-4 flex-wrap"><h3 class="text-lg font-bold">Evolução por Hora</h3><div class="flex items-center gap-4 text-sm flex-wrap"><div class="flex items-center gap-2"><label for="cmp-block" class="text-slate-300">Bloco:</label><select id="cmp-block" class="pill rounded-lg px-3 py-1.5"><option value="Total" selected>Total</option><option value="mob_top (P1)">mob_top (P1)</option><option value="mob_interstitial (P1)">mob_interstitial (P1)</option><option value="mob_offerwall (P2)">mob_offerwall (P2)</option><option value="mob_top (P2)">mob_top (P2)</option><option value="rewarded (Quiz)">rewarded (Quiz)</option></select></div><div class="flex items-center gap-2"><label for="cmp-metric" class="text-slate-300">Métrica:</label><select id="cmp-metric" class="pill rounded-lg px-3 py-1.5"><option value="rps" selected>RPS</option><option value="cpc">CPC</option><option value="interactionRate">Taxa de interação</option><option value="ecpm">eCPM</option><option value="coverage">Cobertura</option><option value="effectiveEcpm">eCPM Efetivo</option></select></div></div></div><div class="relative w-full h-96 mt-4"><canvas id="cmp-canvas"></canvas></div>'+(!res.seriesChart||!res.seriesChart.length?'<div class="text-slate-400 text-sm mt-2">Sem dados suficientes para o gráfico.</div>':'');hostC.appendChild(chartBox);
       if(res.seriesChart&&res.seriesChart.length){function redraw(){setupCompareChart(LAST_RES);}byId('cmp-metric').onchange=redraw;byId('cmp-block').onchange=redraw;redraw();}
-      if(res.compareBlocks&&res.compareBlocks.length){var leg='<div class="flex flex-wrap gap-2 mb-3 text-xs"><span class="px-2 py-1 rounded-lg border border-blue-600 bg-blue-900/30 text-blue-300">mob_top</span><span class="px-2 py-1 rounded-lg border border-violet-600 bg-violet-900/30 text-violet-300">mob_interstitial</span><span class="px-2 py-1 rounded-lg border border-amber-600 bg-amber-900/30 text-amber-300">mob_offerwall</span><span class="px-2 py-1 rounded-lg border border-emerald-600 bg-emerald-900/30 text-emerald-300">rewarded</span></div>';var gr={P1:{},P2:{},Quiz:{}};var o1=['mob_top (P1)','mob_interstitial (P1)'],o2=['mob_offerwall (P2)','mob_top (P2)'],oq=['rewarded (Quiz)'];res.compareBlocks.forEach(function(r){var p=r.parte;if(!gr[p])gr[p]={};if(!gr[p][r.label])gr[p][r.label]=[];gr[p][r.label].push(r);});function tableFor(list){list.sort(function(a,b){return a.page<b.page?-1:(a.page>b.page?1:b.metrics.revenue-a.metrics.revenue);});return '<div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">Solicitações</th><th class="text-right py-2 pr-2">Cobertura</th><th class="text-right py-2 pr-2">CPC</th></tr></thead><tbody>'+list.map(function(r){var m=r.metrics;return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(m.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(m.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(m.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(m.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(m.ecpm)+'</td><td class="py-2 pr-2 text-right">'+num(m.requests,0)+'</td><td class="py-2 pr-2 text-right">'+pct(m.coverage,2)+'</td><td class="py-2 pr-2 text-right">'+money(m.cpc,3)+'</td></tr>';}).join('')+'</tbody></table></div>';}var cmpb=document.createElement('div');cmpb.className='card rounded-2xl p-5 space-y-6';var html='<h3 class="text-lg font-bold mb-2">Comparativo por Blocos</h3>'+leg;var p1h='',p2h='',qh='';oq.forEach(function(lbl){if(gr.Quiz&&gr.Quiz[lbl]&&gr.Quiz[lbl].length)qh+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.Quiz[lbl])+'</div>';});if(qh)html+='<div class="card rounded-xl p-4 border border-emerald-700 bg-emerald-900/10"><h4 class="text-base font-bold mb-3 text-emerald-300">Análise Quiz</h4><div class="space-y-4">'+qh+'</div></div>';o1.forEach(function(lbl){if(gr.P1&&gr.P1[lbl]&&gr.P1[lbl].length)p1h+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.P1[lbl])+'</div>';});if(p1h)html+='<div class="card rounded-xl p-4 border border-blue-700 bg-blue-900/10"><h4 class="text-base font-bold mb-3 text-blue-300">Análise P1</h4><div class="space-y-4">'+p1h+'</div></div>';o2.forEach(function(lbl){if(gr.P2&&gr.P2[lbl]&&gr.P2[lbl].length)p2h+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.P2[lbl])+'</div>';});if(p2h)html+='<div class="card rounded-xl p-4 border border-teal-700 bg-teal-900/10"><h4 class="text-base font-bold mb-3 text-teal-300">Análise P2</h4><div class="space-y-4">'+p2h+'</div></div>';cmpb.innerHTML=html;hostC.appendChild(cmpb);}
+      if(res.compareBlocks && res.compareBlocks.length){
+        hostC.appendChild(createCompareBlocksCard(res.compareBlocks));
+      }
     }
 
     function renderSuggestions(pageName, partData, cpcAlvo, network) {
@@ -588,184 +1843,400 @@
       }
 
       var pricingHtml = '';
-      if (network === 'AdSeleto' && suggestionsHtml) {
+      var allowPricing = (network === 'AdSeleto' || network === 'Igoal');
+      if (allowPricing && suggestionsHtml) {
         const pricingBlockId = `pricing-${pageName.replace(/[\s/]/g, '-')}-${partData.parte}`;
+        const safeNetwork = escapeHtml(network || '');
+        const safePageAttr = escapeHtml(pageName);
+        const safePartAttr = escapeHtml(partData.parte);
+        const currencyValue = (partData.meta && partData.meta.moeda ? String(partData.meta.moeda).toUpperCase() : 'USD');
+        const safeCurrency = escapeHtml(currencyValue);
+        const buttonLabel = network === 'Igoal' ? 'Precificar (Igoal)' : 'Precificar (AdSeleto)';
+        const buttonColor = network === 'Igoal' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-sky-600 hover:bg-sky-500';
+        const borderColor = network === 'Igoal' ? 'border-emerald-500/30' : 'border-sky-500/30';
         pricingHtml = `
           <div class="mt-4">
-            <button type="button" class="bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold px-4 py-2 rounded-xl w-full" onclick="togglePricingCard('${pricingBlockId}')">
-              Precificar
+            <button type="button" class="${buttonColor} text-white text-sm font-semibold px-4 py-2 rounded-xl w-full" onclick="togglePricingCard('${pricingBlockId}')">
+              ${buttonLabel}
             </button>
-            <div id="${pricingBlockId}" class="hidden mt-3 card rounded-xl p-4 bg-slate-900/70 border-sky-500/30">
-              </div>
+            <div id="${pricingBlockId}" data-network="${safeNetwork}" data-page="${safePageAttr}" data-part="${safePartAttr}" data-currency="${safeCurrency}" class="hidden mt-3 card rounded-xl p-4 bg-slate-900/70 ${borderColor}">
+            </div>
           </div>
         `;
       }
-      
+
       if (suggestionsHtml) {
         container.innerHTML = '<div class="card rounded-xl p-4 space-y-3 bg-slate-900/50 border-blue-500/30"><h4 class="text-base font-bold text-slate-100">Sugestões de Precificação</h4>'+suggestionsHtml+'</div>' + pricingHtml;
       } else {
         container.innerHTML = '';
       }
     }
-    
-    window.togglePricingSort = function(key) {
-        if (PRICING_SORT.by === key) {
-            PRICING_SORT.dir = PRICING_SORT.dir === 'asc' ? 'desc' : 'asc';
+
+    window.togglePricingSort = function(network, key) {
+        var state = getPricingSortState(network);
+        if (state.by === key) {
+            state.dir = state.dir === 'asc' ? 'desc' : 'asc';
         } else {
-            PRICING_SORT.by = key;
-            PRICING_SORT.dir = 'asc';
+            state.by = key;
+            state.dir = key === 'price_rule' ? 'desc' : 'asc';
         }
-        if (PRICING_SORT.lastBlockId) {
-            togglePricingCard(PRICING_SORT.lastBlockId, true);
+        if (state.lastBlockId) {
+            togglePricingCard(state.lastBlockId, true);
         }
     }
 
-    function pricingSortIndicator(key) {
-        if (PRICING_SORT.by !== key) return '';
-        return PRICING_SORT.dir === 'asc' ? ' ▲' : ' ▼';
+    function pricingSortIndicator(network, key) {
+        var state = getPricingSortState(network);
+        if (state.by !== key) return '';
+        return state.dir === 'asc' ? ' ▲' : ' ▼';
     }
 
-    function togglePricingCard(blockId, forceRerender = false) {
+    function togglePricingCard(blockId, forceRerender = false, skipCurrencyCheck = false) {
         const card = byId(blockId);
         if (!card) return;
 
-        PRICING_SORT.lastBlockId = blockId;
+        const network = card.dataset.network || 'AdSeleto';
+        const sortState = getPricingSortState(network);
+        sortState.lastBlockId = blockId;
+
         const isHidden = card.classList.contains('hidden');
+        const currency = (card.dataset.currency || '').toUpperCase();
+
+        if (!skipCurrencyCheck && currency === 'BRL' && isHidden) {
+            showCurrencyModal(function(){ togglePricingCard(blockId, forceRerender, true); });
+            return;
+        }
 
         if (isHidden || forceRerender) {
-            const [_, page, part] = blockId.split('-');
-            const pgData = LAST_RES.pages.find(p => p.page.replace(/[\s/]/g, '-') === page);
-            const partData = pgData.parts.find(p => p.parte === part);
+            const pageName = card.dataset.page || '';
+            const partName = card.dataset.part || '';
+            const pgData = (LAST_RES.pages || []).find(p => p.page === pageName);
+            if (!pgData) { card.innerHTML = '<p class="text-sm text-rose-300">Página não encontrada.</p>'; return; }
+            const partData = (pgData.parts || []).find(p => p.parte === partName);
+            if (!partData) { card.innerHTML = '<p class="text-sm text-rose-300">Parte não encontrada.</p>'; return; }
 
-            const utm_source = partData.meta.canal || '';
-            const configuredUrls = partData.meta.urls || [];
-            const adUnits = [...new Set(partData.details.map(d => d.adunit))];
+            if (network === 'AdSeleto') {
+                const utm_source = partData.meta.canal || '';
+                const configuredUrls = partData.meta.urls || [];
+                const adUnits = [...new Set(partData.details.map(d => d.adunit))];
+                const existingRules = LAST_RES.pricingRulesAdSeleto || [];
 
-            let pmd_id = '';
-            const combinations = [];
+                let pmd_id = '';
+                const combinations = [];
+                const seen = new Set();
 
-            configuredUrls.forEach(url => {
-                const urlPath = url.split('/').pop() || url;
-                adUnits.forEach(unit => {
-                    const existingRule = (LAST_RES.pricingRulesAdSeleto || []).find(r => 
-                        r.utm_source === utm_source && r.slot_id === unit && r.url === urlPath
-                    );
-                    if (existingRule && existingRule.domain_id) pmd_id = existingRule.domain_id;
+                configuredUrls.forEach(url => {
+                    const urlPath = url.split('/').pop() || url;
+                    adUnits.forEach(unit => {
+                        const key = `${urlPath}||${unit}||${utm_source}`;
+                        if (seen.has(key)) return;
+                        seen.add(key);
+                        const existingRule = existingRules.find(r =>
+                            r.utm_source === utm_source && r.slot_id === unit && r.url === urlPath
+                        );
+                        if (existingRule && existingRule.domain_id) pmd_id = existingRule.domain_id;
 
-                    combinations.push({
-                        urlPath: urlPath,
-                        unit: unit,
-                        utm_source: utm_source,
-                        spnprice_id: existingRule ? existingRule.spnprice_id : '',
-                        price_rule: existingRule ? existingRule.price_rule : ''
+                        combinations.push({
+                            urlPath: urlPath,
+                            unit: unit,
+                            utm_source: utm_source,
+                            spnprice_id: existingRule ? existingRule.spnprice_id : '',
+                            price_rule: existingRule ? existingRule.price_rule : ''
+                        });
                     });
                 });
-            });
 
-            combinations.sort((a, b) => {
-                const key = PRICING_SORT.by;
-                const dir = PRICING_SORT.dir === 'asc' ? 1 : -1;
-                let valA = a[key];
-                let valB = b[key];
-                
-                if (key === 'price_rule') {
-                    valA = parseFloat(valA) || 0;
-                    valB = parseFloat(valB) || 0;
-                } else {
-                    valA = String(valA || '').toLowerCase();
-                    valB = String(valB || '').toLowerCase();
-                }
+                combinations.sort(function(a, b) {
+                    const key = sortState.by;
+                    const dir = sortState.dir === 'asc' ? 1 : -1;
+                    let valA = a[key];
+                    let valB = b[key];
+                    if (key === 'price_rule') {
+                        valA = parseFloat(valA) || 0;
+                        valB = parseFloat(valB) || 0;
+                    } else {
+                        valA = String(valA || '').toLowerCase();
+                        valB = String(valB || '').toLowerCase();
+                    }
+                    if (valA < valB) return -1 * dir;
+                    if (valA > valB) return 1 * dir;
+                    return 0;
+                });
 
-                if (valA < valB) return -1 * dir;
-                if (valA > valB) return 1 * dir;
-                return 0;
-            });
-
-            let tableRowsHtml = combinations.map(combo => `
+                const tableRowsHtml = combinations.map(function(combo) {
+                    return `
                 <tr class="border-t border-slate-700/60">
-                    <input type="hidden" name="spnprice_id" value="${combo.spnprice_id}">
-                    <input type="hidden" name="utm_source" value="${combo.utm_source}">
-                    <input type="hidden" name="url" value="${combo.urlPath}">
-                    <input type="hidden" name="slot_id" value="${combo.unit}">
-                    <td class="text-slate-400 text-xs py-2">${combo.utm_source || '-'}</td>
-                    <td class="text-slate-400 text-xs py-2">${combo.urlPath || '-'}</td>
-                    <td class="text-slate-300 text-xs py-2 font-semibold">${combo.unit}</td>
+                    <input type="hidden" name="spnprice_id" value="${escapeHtml(combo.spnprice_id)}">
+                    <input type="hidden" name="utm_source" value="${escapeHtml(combo.utm_source)}">
+                    <input type="hidden" name="url" value="${escapeHtml(combo.urlPath)}">
+                    <input type="hidden" name="slot_id" value="${escapeHtml(combo.unit)}">
+                    <td class="text-slate-400 text-xs py-2">${escapeHtml(combo.utm_source || '-')}</td>
+                    <td class="text-slate-400 text-xs py-2">${escapeHtml(combo.urlPath || '-')}</td>
+                    <td class="text-slate-300 text-xs py-2 font-semibold">${escapeHtml(combo.unit)}</td>
                     <td class="py-2">
-                        <input name="price_rule" type="number" step="0.01" class="w-24 bg-slate-800 rounded-md px-2 py-1 text-sm" placeholder="0.00" value="${combo.price_rule}">
+                        <input name="price_rule" type="number" step="0.01" class="w-24 bg-slate-800 rounded-md px-2 py-1 text-sm" placeholder="0.00" value="${escapeHtml(combo.price_rule)}">
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+                }).join('');
 
-            card.innerHTML = `
-                <form onsubmit="savePricingRules(event)">
+                card.innerHTML = combinations.length ? `
+                <form data-network="AdSeleto" onsubmit="savePricingRules(event)">
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="block text-xs text-slate-400 mb-1">PMD ID (para todas as regras)</label>
-                            <input name="domain_id" required class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Preencher na 1ª vez" value="${pmd_id}">
+                            <input name="domain_id" required class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Preencher na 1ª vez" value="${escapeHtml(pmd_id)}">
                         </div>
                     </div>
                     <div class="overflow-auto max-h-64">
                         <table class="w-full text-left text-sm pricing-table">
                             <thead>
                                 <tr class="text-slate-400">
-                                    <th class="font-semibold" onclick="togglePricingSort('utm_source')">UTM Source${pricingSortIndicator('utm_source')}</th>
-                                    <th class="font-semibold" onclick="togglePricingSort('urlPath')">URL${pricingSortIndicator('urlPath')}</th>
-                                    <th class="font-semibold" onclick="togglePricingSort('unit')">Bloco${pricingSortIndicator('unit')}</th>
-                                    <th class="font-semibold" onclick="togglePricingSort('price_rule')">Valor${pricingSortIndicator('price_rule')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('AdSeleto','utm_source')">UTM Source${pricingSortIndicator('AdSeleto','utm_source')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('AdSeleto','urlPath')">URL${pricingSortIndicator('AdSeleto','urlPath')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('AdSeleto','unit')">Bloco${pricingSortIndicator('AdSeleto','unit')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('AdSeleto','price_rule')">Valor${pricingSortIndicator('AdSeleto','price_rule')}</th>
                                 </tr>
                             </thead>
                             <tbody>${tableRowsHtml}</tbody>
                         </table>
                     </div>
                     <button type="submit" class="mt-4 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-xl w-full">Salvar Todas as Regras</button>
-                </form>
-            `;
+                </form>` : '<p class="text-sm text-slate-300">Nenhuma combinação de URL e bloco encontrada.</p>';
+            } else if (network === 'Igoal') {
+                const canal = partData.meta.canal || '';
+                const utmSourceValue = extractUtmSource(canal);
+                const configuredUrls = partData.meta.urls || [];
+                const adUnits = [...new Set(
+                    (partData.details || [])
+                        .map(function(detail) { return detail.adunit; })
+                        .filter(function(unit) {
+                            return typeof unit === 'string' && unit.toLowerCase().includes('mob');
+                        })
+                )];
+                const existingRules = LAST_RES.pricingRulesIgoal || [];
+
+                const combinations = [];
+                const seen = new Set();
+                let defaultCompanyId = '';
+
+                configuredUrls.forEach(function(url) {
+                    const parsed = parseDomainAndPath(url);
+                    const domain = parsed.domain;
+                    const path = parsed.path;
+                    adUnits.forEach(function(unit) {
+                        const key = `${domain}||${path}||${unit}||${utmSourceValue}`;
+                        if (seen.has(key)) return;
+                        seen.add(key);
+                        const existingRule = existingRules.find(function(rule) {
+                            return String(rule.dominio || '').toLowerCase() === domain &&
+                                   String(rule.url || '').toLowerCase() === path.toLowerCase() &&
+                                   String(rule.bloco || '') === String(unit || '') &&
+                                   String(rule.utm_source || '') === String(utmSourceValue || '');
+                        });
+                        if (existingRule && existingRule.company_id && !defaultCompanyId) {
+                            defaultCompanyId = existingRule.company_id;
+                        }
+                        combinations.push({
+                            rule_id: existingRule ? existingRule.rule_id : '',
+                            dominio: domain,
+                            urlPath: path,
+                            unit: unit,
+                            utm_source: utmSourceValue,
+                            price_rule: ensureTwoDecimals(existingRule ? existingRule.price_rule : ''),
+                            company_id: existingRule ? existingRule.company_id : ''
+                        });
+                    });
+                });
+
+                combinations.sort(function(a, b) {
+                    const key = sortState.by;
+                    const dir = sortState.dir === 'asc' ? 1 : -1;
+                    let valA = a[key];
+                    let valB = b[key];
+                    if (key === 'price_rule') {
+                        valA = parseFloat(valA) || 0;
+                        valB = parseFloat(valB) || 0;
+                    } else {
+                        valA = String(valA || '').toLowerCase();
+                        valB = String(valB || '').toLowerCase();
+                    }
+                    if (valA < valB) return -1 * dir;
+                    if (valA > valB) return 1 * dir;
+                    return 0;
+                });
+
+                const rowsHtml = combinations.map(function(combo) {
+                    return `
+                <tr class="border-t border-slate-700/60">
+                    <input type="hidden" name="rule_id" value="${escapeHtml(combo.rule_id)}">
+                    <input type="hidden" name="dominio" value="${escapeHtml(combo.dominio)}">
+                    <input type="hidden" name="utm_source" value="${escapeHtml(combo.utm_source)}">
+                    <input type="hidden" name="url" value="${escapeHtml(combo.urlPath)}">
+                    <input type="hidden" name="bloco" value="${escapeHtml(combo.unit)}">
+                    <td class="text-slate-400 text-xs py-2">${escapeHtml(combo.dominio || '-')}</td>
+                    <td class="text-slate-400 text-xs py-2">${escapeHtml(combo.urlPath || '-')}</td>
+                    <td class="text-slate-400 text-xs py-2">${escapeHtml(combo.utm_source || '-')}</td>
+                    <td class="text-slate-300 text-xs py-2 font-semibold">${escapeHtml(combo.unit || '-')}</td>
+                    <td class="py-2">
+                        <input name="price_rule" type="number" step="0.01" class="w-24 bg-slate-800 rounded-md px-2 py-1 text-sm" placeholder="0.00" value="${escapeHtml(combo.price_rule)}">
+                    </td>
+                </tr>`;
+                }).join('');
+
+                const companyValue = escapeHtml(defaultCompanyId);
+                const submitDisabled = combinations.length ? '' : ' disabled';
+
+                card.innerHTML = combinations.length ? `
+                <form data-network="Igoal" onsubmit="savePricingRules(event)">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Company ID (para todas as regras)</label>
+                            <input name="company_id" required class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Informe o Company ID" value="${companyValue}">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">UTM Source detectada</label>
+                            <input class="w-full pill rounded-lg px-3 py-2 text-sm bg-slate-800/60 border border-slate-700/60" value="${escapeHtml(utmSourceValue)}" readonly>
+                        </div>
+                    </div>
+                    <div class="overflow-auto max-h-64">
+                        <table class="w-full text-left text-sm pricing-table">
+                            <thead>
+                                <tr class="text-slate-400">
+                                    <th class="font-semibold" onclick="togglePricingSort('Igoal','dominio')">Domínio${pricingSortIndicator('Igoal','dominio')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('Igoal','urlPath')">URL${pricingSortIndicator('Igoal','urlPath')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('Igoal','utm_source')">UTM Source${pricingSortIndicator('Igoal','utm_source')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('Igoal','unit')">Bloco${pricingSortIndicator('Igoal','unit')}</th>
+                                    <th class="font-semibold" onclick="togglePricingSort('Igoal','price_rule')">Valor${pricingSortIndicator('Igoal','price_rule')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                    <button type="submit" class="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-xl w-full"${submitDisabled}>Salvar Todas as Regras</button>
+                </form>` : '<p class="text-sm text-slate-300">Nenhum bloco elegível encontrado para precificação.</p>';
+            } else {
+                card.innerHTML = '<p class="text-sm text-slate-300">Rede sem suporte para precificação automática.</p>';
+            }
         }
-        
-        if (!forceRerender) {
+
+        if (forceRerender) {
+            card.classList.remove('hidden');
+        } else {
             card.classList.toggle('hidden');
         }
     }
-    
+
+    function schedulePricingSync(network) {
+        var runner = (network === 'Igoal') ? 'runIgoalPricingUpdate' : 'runAdSeletoPricingUpdate';
+        if (!runner) return;
+        if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+
+        if (SYNC_TIMERS[network]) {
+            clearTimeout(SYNC_TIMERS[network]);
+        }
+
+        SYNC_TIMERS[network] = setTimeout(function(){
+            SYNC_TIMERS[network] = null;
+            google.script.run
+                .withSuccessHandler(function(res){
+                    var ok = (res && typeof res.ok !== 'undefined') ? !!res.ok : true;
+                    var message = (res && res.message) ? res.message : 'Sincronização concluída.';
+                    showToast(message, ok ? 'success' : 'error');
+                })
+                .withFailureHandler(function(err){
+                    var message = err && err.message ? err.message : 'Erro desconhecido.';
+                    showToast('Falha na sincronização automática:\n' + message, 'error');
+                })[runner]();
+        }, 5000);
+    }
+
     function savePricingRules(event) {
         event.preventDefault();
         const form = event.target;
-        const pmdId = form.domain_id.value.trim();
+        const network = form.dataset.network || 'AdSeleto';
         const rows = form.querySelectorAll('tbody tr');
-        
-        if (!pmdId) { showToast('O PMD ID é obrigatório.', 'error'); return; }
 
-        const rulesPayload = [];
-        rows.forEach(row => {
-            const price_rule = row.querySelector('[name=price_rule]').value;
-            if (price_rule) {
-                rulesPayload.push({
-                    spnprice_id: row.querySelector('[name=spnprice_id]').value,
-                    domain_id: pmdId,
-                    price_rule: price_rule,
-                    utm_source: row.querySelector('[name=utm_source]').value,
-                    slot_id: row.querySelector('[name=slot_id]').value,
-                    url: row.querySelector('[name=url]').value,
-                });
-            }
-        });
+        if (network === 'AdSeleto') {
+            const pmdId = (form.domain_id.value || '').trim();
+            if (!pmdId) { showToast('O PMD ID é obrigatório.', 'error'); return; }
 
-        if(rulesPayload.length === 0) { showToast('Preencha ao menos um valor para salvar.', 'error'); return; }
+            const rulesPayload = [];
+            rows.forEach(row => {
+                const price_rule = row.querySelector('[name=price_rule]').value;
+                if (price_rule) {
+                    rulesPayload.push({
+                        spnprice_id: row.querySelector('[name=spnprice_id]').value,
+                        domain_id: pmdId,
+                        price_rule: price_rule,
+                        utm_source: row.querySelector('[name=utm_source]').value,
+                        slot_id: row.querySelector('[name=slot_id]').value,
+                        url: row.querySelector('[name=url]').value,
+                    });
+                }
+            });
 
-        google.script.run.withSuccessHandler(function(res) {
-            if (res.ok) {
-                showToast('Regras salvas na planilha com sucesso!\nElas serão enviadas na próxima sincronização.', 'success');
-                const updatedRules = res.rules;
-                updatedRules.forEach(newRule => {
-                    const index = (LAST_RES.pricingRulesAdSeleto || []).findIndex(r => String(r.spnprice_id) === String(newRule.spnprice_id));
-                    if (index > -1) { LAST_RES.pricingRulesAdSeleto[index] = newRule; } 
-                    else { LAST_RES.pricingRulesAdSeleto.push(newRule); }
-                });
-                form.closest('.card').classList.add('hidden');
-            } else {
-                showToast('Falha ao salvar as regras: ' + (res.message || 'Erro desconhecido.'), 'error');
-            }
-        }).upsertPricingRulesAdSeleto(rulesPayload);
+            if(rulesPayload.length === 0) { showToast('Preencha ao menos um valor para salvar.', 'error'); return; }
+
+            google.script.run.withSuccessHandler(function(res) {
+                if (res.ok) {
+                    showToast('Regras salvas na planilha com sucesso!\nSincronização automática será enviada em instantes.', 'success');
+                    const updatedRules = res.rules || [];
+                    updatedRules.forEach(newRule => {
+                        const index = (LAST_RES.pricingRulesAdSeleto || []).findIndex(r => String(r.spnprice_id) === String(newRule.spnprice_id));
+                        if (index > -1) { LAST_RES.pricingRulesAdSeleto[index] = newRule; }
+                        else { LAST_RES.pricingRulesAdSeleto.push(newRule); }
+                    });
+                    form.closest('.card').classList.add('hidden');
+                    schedulePricingSync('AdSeleto');
+                } else {
+                    showToast('Falha ao salvar as regras: ' + (res.message || 'Erro desconhecido.'), 'error');
+                }
+            }).upsertPricingRulesAdSeleto(rulesPayload);
+        } else if (network === 'Igoal') {
+            const companyId = (form.company_id.value || '').trim();
+            if (!companyId) { showToast('O Company ID é obrigatório.', 'error'); return; }
+
+            const rulesPayload = [];
+            rows.forEach(row => {
+                const priceInput = row.querySelector('[name=price_rule]');
+                if (!priceInput) return;
+                const formattedPrice = ensureTwoDecimals(priceInput.value);
+                if (formattedPrice) {
+                    priceInput.value = formattedPrice;
+                    rulesPayload.push({
+                        rule_id: row.querySelector('[name=rule_id]').value,
+                        dominio: row.querySelector('[name=dominio]').value,
+                        utm_source: row.querySelector('[name=utm_source]').value,
+                        url: row.querySelector('[name=url]').value,
+                        bloco: row.querySelector('[name=bloco]').value,
+                        company_id: companyId,
+                        price_rule: formattedPrice
+                    });
+                }
+            });
+
+            if(rulesPayload.length === 0) { showToast('Preencha ao menos um valor para salvar.', 'error'); return; }
+
+            google.script.run.withSuccessHandler(function(res) {
+                if (res.ok) {
+                    showToast('Regras da Igoal salvas na planilha!\nSincronização automática será enviada em instantes.', 'success');
+                    const updatedRules = res.rules || [];
+                    updatedRules.forEach(newRule => {
+                        if (!newRule.company_id) newRule.company_id = companyId;
+                        newRule.price_rule = ensureTwoDecimals(newRule.price_rule);
+                        const index = (LAST_RES.pricingRulesIgoal || []).findIndex(r => String(r.rule_id) === String(newRule.rule_id));
+                        if (index > -1) { LAST_RES.pricingRulesIgoal[index] = newRule; }
+                        else { LAST_RES.pricingRulesIgoal.push(newRule); }
+                    });
+                    form.closest('.card').classList.add('hidden');
+                    schedulePricingSync('Igoal');
+                } else {
+                    showToast('Falha ao salvar as regras: ' + (res.message || 'Erro desconhecido.'), 'error');
+                }
+            }).upsertPricingRulesIgoal(rulesPayload);
+        } else {
+            showToast('Rede não suportada para salvar regras.', 'error');
+        }
     }
     
     function setupCompareChart(res){
@@ -781,7 +2252,7 @@
 
     function renderCfgTable(rows){
       var tb=byId('cfg-list');
-      tb.innerHTML=rows.map(function(r){return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60 align-top"><td class="py-2 px-2">'+r.pessoa+'</td><td class="py-2 px-2">'+r.operacao+'</td><td class="py-2 px-2">'+r.pagina+'</td><td class="py-2 px-2">'+r.parte+'</td><td class="py-2 px-2">'+r.canal+'</td><td class="py-2 px-2">'+(r.urls||[]).join('; ')+'</td><td class="py-2 px-2">'+(r.rede||'-')+'</td>'+
+      tb.innerHTML=rows.map(function(r){return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60 align-top"><td class="py-2 px-2">'+r.pessoa+'</td><td class="py-2 px-2">'+r.operacao+'</td><td class="py-2 px-2">'+r.pagina+'</td><td class="py-2 px-2">'+r.parte+'</td><td class="py-2 px-2">'+r.canal+'</td><td class="py-2 px-2">'+(r.urls||[]).join('; ')+'</td><td class="py-2 px-2">'+(r.rede||'-')+'</td><td class="py-2 px-2">'+(r.moeda||'USD')+'</td>'+
       '<td class="py-2 px-2 whitespace-nowrap"><button type="button" class="text-sky-400 hover:text-sky-300 text-xs font-semibold mr-3" onclick="editCfgItem(\''+r.id+'\')">Editar</button><button type="button" class="text-rose-400 hover:text-rose-300 text-xs font-semibold" onclick="deleteCfgItem(\''+r.id+'\')">Apagar</button></td></tr>';}).join('');
     }
 
@@ -796,6 +2267,7 @@
         byId('cfg-canal').value = item.canal;
         byId('cfg-urls').value = (item.urls || []).join(';');
         byId('cfg-rede').value = item.rede || '';
+        byId('cfg-moeda').value = item.moeda || 'USD';
         byId('cfg-pessoa').focus();
     }
 
@@ -809,12 +2281,12 @@
     }
 
     function wireCfgForm(){
-      byId('btn-limpar').onclick=function(){byId('cfg-id').value='';byId('cfg-pessoa').value='';byId('cfg-operacao').value='';byId('cfg-pagina').value='';byId('cfg-parte').value='P1';byId('cfg-canal').value='';byId('cfg-urls').value=''; byId('cfg-rede').value='';};
+      byId('btn-limpar').onclick=function(){byId('cfg-id').value='';byId('cfg-pessoa').value='';byId('cfg-operacao').value='';byId('cfg-pagina').value='';byId('cfg-parte').value='P1';byId('cfg-canal').value='';byId('cfg-urls').value=''; byId('cfg-rede').value=''; byId('cfg-moeda').value='USD';};
       byId('form-cfg').onsubmit = function(e){
         e.preventDefault();
-        var payload={id:byId('cfg-id').value,pessoa:(byId('cfg-pessoa').value||'').trim(),operacao:(byId('cfg-operacao').value||'').trim(),pagina:(byId('cfg-pagina').value||'').trim(),parte:(byId('cfg-parte').value||'').trim(),canal:(byId('cfg-canal').value||'').trim(),urls:(byId('cfg-urls').value||'').trim(),rede:(byId('cfg-rede').value||'').trim()};
+        var payload={id:byId('cfg-id').value,pessoa:(byId('cfg-pessoa').value||'').trim(),operacao:(byId('cfg-operacao').value||'').trim(),pagina:(byId('cfg-pagina').value||'').trim(),parte:(byId('cfg-parte').value||'').trim(),canal:(byId('cfg-canal').value||'').trim(),urls:(byId('cfg-urls').value||'').trim(),rede:(byId('cfg-rede').value||'').trim(),moeda:(byId('cfg-moeda').value||'USD').trim().toUpperCase()};
         if(!payload.pessoa||!payload.operacao||!payload.pagina||!payload.parte){ showToast('Preencha Pessoa, Operação, Página e Parte.', 'error'); return; }
-        
+
         google.script.run.withSuccessHandler(function(){
             showToast('Configuração salva com sucesso!', 'success');
             byId('btn-limpar').click();
@@ -823,7 +2295,18 @@
       };
     }
 
-    document.addEventListener('DOMContentLoaded', function(){ loadConfig(); wirePQ(); wireFilters(); wireCfgForm(); });
+    document.addEventListener('DOMContentLoaded', function(){
+        initSearchableSelect('f-pessoa', '— selecione —');
+        initSearchableSelect('f-operacao', '— selecione —');
+        setSearchableOptions('f-pessoa', []);
+        setSearchableOptions('f-operacao', []);
+        setSearchableDisabled('f-operacao', true);
+        loadConfig();
+        wirePQ();
+        wireFilters();
+        wireCfgForm();
+        setupCurrencyModal();
+    });
 </script>
 </body>
 </html>
