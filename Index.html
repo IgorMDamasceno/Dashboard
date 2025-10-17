@@ -493,6 +493,46 @@
         container.appendChild(frag);
     }
 
+    function renderCoordinationSuggestionCell(text){
+        if (!text) {
+            return '<div class="text-xs text-slate-400">Sem sugestão disponível</div>';
+        }
+        var parts = String(text).split(' — ');
+        var main = parts.shift() || '';
+        var detail = parts.join(' — ');
+        var palette = {
+            wrapper: 'border border-slate-700/60 bg-slate-800/40',
+            action: 'text-slate-200',
+            detail: 'text-slate-300'
+        };
+        if (/aumentar/i.test(main)) {
+            palette = {
+                wrapper: 'border border-emerald-500/40 bg-emerald-500/10',
+                action: 'text-emerald-200',
+                detail: 'text-emerald-100'
+            };
+        } else if (/reduzir/i.test(main)) {
+            palette = {
+                wrapper: 'border border-rose-500/40 bg-rose-500/10',
+                action: 'text-rose-200',
+                detail: 'text-rose-100'
+            };
+        } else if (/manter/i.test(main)) {
+            palette = {
+                wrapper: 'border border-amber-500/40 bg-amber-500/10',
+                action: 'text-amber-200',
+                detail: 'text-amber-100'
+            };
+        }
+        var html = '<div class="rounded-lg px-3 py-2 '+palette.wrapper+'">'
+            + '<div class="text-sm font-semibold '+palette.action+'">'+escapeHtml(main || text)+'</div>';
+        if (detail) {
+            html += '<div class="text-xs mt-1 leading-snug '+palette.detail+'">'+escapeHtml(detail)+'</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
     function buildCoordinationTable(op, targetValue){
         var blocks = (op && op.blocks) ? op.blocks.slice() : [];
         if (!blocks.length) {
@@ -505,38 +545,114 @@
             return String(a.label||'').localeCompare(String(b.label||''), 'pt-BR');
         });
         var basisMap = {};
-        blocks.forEach(function(block){ basisMap[String(block.page||'')+'||'+String(block.label||'')] = block.suggestionBasis || {}; });
+        blocks.forEach(function(block){
+            basisMap[String(block.page||'')+'||'+String(block.label||'')] = block.suggestionBasis || {};
+        });
         var target = parseFloat(targetValue);
         if (!isFinite(target)) target = NaN;
-        var rows = blocks.map(function(block){
+
+        var grouped = { Quiz: {}, P1: {}, P2: {} };
+        blocks.forEach(function(block){
+            var part = block.parte || '';
+            if (!grouped[part]) grouped[part] = {};
+            var label = block.label || '-';
+            if (!grouped[part][label]) grouped[part][label] = [];
             var metrics = block.metrics || {};
-            var suggestion = getCoordinationSuggestion(block, target, basisMap);
-            return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/50">'
-                + '<td class="py-2 px-2 text-slate-300">'+escapeHtml(block.page || '-')+'</td>'
-                + '<td class="py-2 px-2 text-right">'+money(metrics.revenue || 0)+'</td>'
-                + '<td class="py-2 px-2 text-right">'+num(metrics.impressions || 0, 0)+'</td>'
-                + '<td class="py-2 px-2 text-right">'+num(metrics.clicks || 0, 0)+'</td>'
-                + '<td class="py-2 px-2 text-right">'+pct(metrics.ctr || 0, 2)+'</td>'
-                + '<td class="py-2 px-2 text-right">'+money(metrics.ecpm || 0)+'</td>'
-                + '<td class="py-2 px-2 text-right">'+num(metrics.requests || 0, 0)+'</td>'
-                + '<td class="py-2 px-2 text-right">'+pct(metrics.coverage || 0, 2)+'</td>'
-                + '<td class="py-2 px-2 text-right">'+money(metrics.cpc || 0, 3)+'</td>'
-                + '<td class="py-2 px-2 text-left text-sm text-slate-200 whitespace-normal">'+escapeHtml(suggestion)+'</td>'
-                + '</tr>';
-        }).join('');
-        var head = '<thead class="text-slate-400"><tr>'
-            + '<th class="text-left py-2 px-2">Página</th>'
-            + '<th class="text-right py-2 px-2">Receita</th>'
-            + '<th class="text-right py-2 px-2">Impressões</th>'
-            + '<th class="text-right py-2 px-2">Cliques</th>'
-            + '<th class="text-right py-2 px-2">CTR</th>'
-            + '<th class="text-right py-2 px-2">eCPM</th>'
-            + '<th class="text-right py-2 px-2">Solicitações</th>'
-            + '<th class="text-right py-2 px-2">Cobertura</th>'
-            + '<th class="text-right py-2 px-2">CPC</th>'
-            + '<th class="text-left py-2 px-2">Sugestão de precificação</th>'
-            + '</tr></thead>';
-        return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+rows+'</tbody></table></div>';
+            grouped[part][label].push({
+                page: block.page || '-',
+                metrics: metrics,
+                suggestion: getCoordinationSuggestion(block, target, basisMap)
+            });
+        });
+
+        var legend = '<div class="flex flex-wrap gap-2 mb-4 text-xs">'
+            + '<span class="px-2 py-1 rounded-lg border border-blue-600 bg-blue-900/30 text-blue-300">mob_top</span>'
+            + '<span class="px-2 py-1 rounded-lg border border-violet-600 bg-violet-900/30 text-violet-300">mob_interstitial</span>'
+            + '<span class="px-2 py-1 rounded-lg border border-amber-600 bg-amber-900/30 text-amber-300">mob_offerwall</span>'
+            + '<span class="px-2 py-1 rounded-lg border border-emerald-600 bg-emerald-900/30 text-emerald-300">rewarded</span>'
+            + '</div>';
+
+        function tableFor(list){
+            if (!list || !list.length) return '';
+            list.sort(function(a,b){
+                return String(a.page||'').localeCompare(String(b.page||''), 'pt-BR');
+            });
+            var rows = list.map(function(item){
+                var metrics = item.metrics || {};
+                return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/50">'
+                    + '<td class="py-2 px-2 text-slate-300">'+escapeHtml(item.page || '-')+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+money(metrics.revenue || 0)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+num(metrics.impressions || 0, 0)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+num(metrics.clicks || 0, 0)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+pct(metrics.ctr || 0, 2)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+money(metrics.ecpm || 0)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+num(metrics.requests || 0, 0)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+pct(metrics.coverage || 0, 2)+'</td>'
+                    + '<td class="py-2 px-2 text-right">'+money(metrics.cpc || 0, 3)+'</td>'
+                    + '<td class="py-2 px-2 align-top">'+renderCoordinationSuggestionCell(item.suggestion)+'</td>'
+                    + '</tr>';
+            }).join('');
+            var head = '<thead class="text-slate-400"><tr>'
+                + '<th class="text-left py-2 px-2">Página</th>'
+                + '<th class="text-right py-2 px-2">Receita</th>'
+                + '<th class="text-right py-2 px-2">Impressões</th>'
+                + '<th class="text-right py-2 px-2">Cliques</th>'
+                + '<th class="text-right py-2 px-2">CTR</th>'
+                + '<th class="text-right py-2 px-2">eCPM</th>'
+                + '<th class="text-right py-2 px-2">Solicitações</th>'
+                + '<th class="text-right py-2 px-2">Cobertura</th>'
+                + '<th class="text-right py-2 px-2">CPC</th>'
+                + '<th class="text-left py-2 px-2">Sugestão de precificação</th>'
+                + '</tr></thead>';
+            return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+rows+'</tbody></table></div>';
+        }
+
+        function sectionHtml(partKey, title, borderClass, textClass){
+            var partGroups = grouped[partKey] || {};
+            var labelsInOrder = [];
+            if (partKey === 'Quiz') labelsInOrder = ['rewarded (Quiz)'];
+            if (partKey === 'P1') labelsInOrder = ['mob_top (P1)', 'mob_interstitial (P1)'];
+            if (partKey === 'P2') labelsInOrder = ['mob_top (P2)', 'mob_offerwall (P2)'];
+            var seen = {};
+            var innerHtml = '';
+            labelsInOrder.forEach(function(label){
+                if (partGroups[label] && partGroups[label].length) {
+                    innerHtml += '<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30">'
+                        + '<h5 class="font-semibold text-sm mb-2 text-slate-200">'+escapeHtml(label)+'</h5>'
+                        + tableFor(partGroups[label])
+                        + '</div>';
+                    seen[label] = true;
+                }
+            });
+            Object.keys(partGroups).sort(function(a,b){ return a.localeCompare(b, 'pt-BR'); }).forEach(function(label){
+                if (seen[label]) return;
+                innerHtml += '<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30">'
+                    + '<h5 class="font-semibold text-sm mb-2 text-slate-200">'+escapeHtml(label)+'</h5>'
+                    + tableFor(partGroups[label])
+                    + '</div>';
+            });
+            if (!innerHtml) return '';
+            return '<div class="card rounded-xl p-4 '+borderClass+'"><h4 class="text-base font-bold mb-3 '+textClass+'">'+title+'</h4><div class="space-y-4">'+innerHtml+'</div></div>';
+        }
+
+        var quizSection = sectionHtml('Quiz', 'Análise Quiz', 'border border-emerald-700 bg-emerald-900/10', 'text-emerald-300');
+        var p1Section = sectionHtml('P1', 'Análise P1', 'border border-blue-700 bg-blue-900/10', 'text-blue-300');
+        var p2Section = sectionHtml('P2', 'Análise P2', 'border border-teal-700 bg-teal-900/10', 'text-teal-300');
+
+        var content = legend;
+        var anySection = false;
+        [quizSection, p1Section, p2Section].forEach(function(section){
+            if (section) {
+                content += section;
+                anySection = true;
+            }
+        });
+
+        if (!anySection) {
+            content += '<div class="card rounded-xl p-4 border border-slate-700/60 bg-slate-900/40 text-sm text-slate-300">Sem dados disponíveis para os blocos analisados.</div>';
+        }
+
+        return '<div class="card rounded-2xl p-5 space-y-6 bg-slate-900/40 border border-slate-700/60">'+content+'</div>';
     }
 
     function getCoordinationSuggestion(block, target, basisMap){
