@@ -86,6 +86,10 @@
           <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z" /><path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z" /></svg>
           Configurar
         </button>
+        <button id="tab-coord" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white flex items-center gap-2 transition-all">
+          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a.75.75 0 01.75.75V4h1.5A2.75 2.75 0 0115 6.75v.978a2.75 2.75 0 011.636 4.305l.999.999a.75.75 0 11-1.06 1.06l-.868-.868c-.46.333-1.017.526-1.622.526h-1.5v1.25a.75.75 0 01-1.5 0V12.75H8.25v1.25a.75.75 0 01-1.5 0V12.75h-1.5A2.75 2.75 0 012.5 10V6.75A2.75 2.75 0 015.25 4h1.5V2.75A.75.75 0 017.5 2zm0 3H5.25c-.69 0-1.25.56-1.25 1.25V10c0 .69.56 1.25 1.25 1.25h9.5c.69 0 1.25-.56 1.25-1.25V6.25c0-.69-.56-1.25-1.25-1.25H10z"/></svg>
+          Coordenação
+        </button>
       </div>
     </header>
 
@@ -186,8 +190,34 @@
         <div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left font-semibold py-2 px-2">Pessoa</th><th class="text-left font-semibold py-2 px-2">Operação</th><th class="text-left font-semibold py-2 px-2">Página</th><th class="text-left font-semibold py-2 px-2">Parte</th><th class="text-left font-semibold py-2 px-2">Canal</th><th class="text-left font-semibold py-2 px-2">URLs</th><th class="text-left font-semibold py-2 px-2">Rede</th><th class="text-left font-semibold py-2 px-2">Moeda</th><th class="text-left font-semibold py-2 px-2">Ações</th></tr></thead><tbody id="cfg-list" class="align-top"></tbody></table></div>
       </div>
     </section>
+
+    <section id="view-coord" class="hidden fade-in space-y-6">
+      <div class="card rounded-2xl p-6 space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <h2 class="text-lg font-bold text-slate-100">Visão de Coordenação</h2>
+          <span class="text-xs text-slate-400">Acesso restrito · Sugestões baseadas nas últimas 4 horas (descartando a mais recente)</span>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-1">Pessoa</label>
+            <select id="coord-pessoa" class="w-full pill rounded-lg px-3 py-2 text-sm"></select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-400 mb-1">Agrupamento</label>
+            <select id="coord-agrupamento" class="w-full pill rounded-lg px-3 py-2 text-sm">
+              <option value="day">Total do dia</option>
+              <option value="last6h">Últimas 6 horas</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end">
+          <button id="coord-btn-carregar" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-xl shadow-lg shadow-indigo-900/40 transition-all">Atualizar visão</button>
+        </div>
+      </div>
+      <div id="coord-results" class="space-y-6"></div>
+    </section>
   </div>
-  
+
   <div id="toast-container"></div>
 
   <div id="currency-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
@@ -199,6 +229,24 @@
       <div class="mt-6 flex justify-end gap-3">
         <button id="currency-modal-cancel" type="button" class="pill px-4 py-2 rounded-xl text-sm">Cancelar</button>
         <button id="currency-modal-accept" type="button" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-4 py-2 rounded-xl text-sm">Entendi</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="coord-password-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4">
+    <div class="card w-full max-w-sm rounded-2xl p-6 text-slate-200 border border-indigo-500/40 bg-slate-900/80 space-y-4">
+      <div>
+        <h3 class="text-lg font-semibold text-indigo-300">Área restrita</h3>
+        <p class="text-sm text-slate-300 mt-1">Informe a senha de coordenação para acessar essa aba.</p>
+      </div>
+      <div>
+        <label for="coord-password-input" class="block text-xs uppercase tracking-wide text-slate-400 mb-1">Senha</label>
+        <input id="coord-password-input" type="password" class="w-full pill rounded-lg px-3 py-2 text-sm" autocomplete="off" placeholder="Digite a senha" />
+        <p id="coord-password-error" class="hidden text-xs text-rose-400 mt-2">Senha incorreta. Tente novamente.</p>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button id="coord-password-cancel" class="pill px-4 py-2 rounded-xl text-sm">Cancelar</button>
+        <button id="coord-password-confirm" class="bg-indigo-500 hover:bg-indigo-400 text-white font-semibold px-4 py-2 rounded-xl text-sm">Acessar</button>
       </div>
     </div>
   </div>
@@ -242,6 +290,324 @@
     function hideCurrencyModal(){
         if (CurrencyModal.element) CurrencyModal.element.classList.add('hidden');
         CurrencyModal.onAccept = null;
+    }
+
+    function showCoordPasswordModal(onSuccess){
+        CoordAccess.pending = (typeof onSuccess === 'function') ? onSuccess : null;
+        var modal = byId('coord-password-modal');
+        var input = byId('coord-password-input');
+        var error = byId('coord-password-error');
+        if (error) error.classList.add('hidden');
+        if (modal) modal.classList.remove('hidden');
+        if (input) {
+            input.value = '';
+            setTimeout(function(){ input.focus(); }, 50);
+        }
+    }
+
+    function hideCoordPasswordModal(){
+        var modal = byId('coord-password-modal');
+        if (modal) modal.classList.add('hidden');
+        var input = byId('coord-password-input');
+        if (input) input.value = '';
+        var error = byId('coord-password-error');
+        if (error) error.classList.add('hidden');
+        CoordAccess.pending = null;
+    }
+
+    function setupCoordinationAccess(){
+        var modal = byId('coord-password-modal');
+        if (modal) {
+            modal.addEventListener('click', function(evt){ if (evt.target === modal) hideCoordPasswordModal(); });
+        }
+        var btnConfirm = byId('coord-password-confirm');
+        if (btnConfirm) {
+            btnConfirm.onclick = function(){
+                var input = byId('coord-password-input');
+                var error = byId('coord-password-error');
+                var value = input ? String(input.value || '').trim() : '';
+                if (value === CoordAccess.password) {
+                    CoordAccess.granted = true;
+                    var cb = CoordAccess.pending;
+                    hideCoordPasswordModal();
+                    CoordAccess.pending = null;
+                    if (typeof cb === 'function') cb();
+                } else {
+                    if (error) error.classList.remove('hidden');
+                    if (input) input.focus();
+                }
+            };
+        }
+        var btnCancel = byId('coord-password-cancel');
+        if (btnCancel) {
+            btnCancel.onclick = function(){ hideCoordPasswordModal(); };
+        }
+        var input = byId('coord-password-input');
+        if (input) {
+            input.addEventListener('keydown', function(evt){
+                if (evt.key === 'Enter') {
+                    evt.preventDefault();
+                    var btn = byId('coord-password-confirm');
+                    if (btn) btn.click();
+                }
+            });
+        }
+        var coordAgr = byId('coord-agrupamento');
+        if (coordAgr) {
+            coordAgr.onchange = function(){ loadCoordinationData(); };
+        }
+        var coordBtn = byId('coord-btn-carregar');
+        if (coordBtn) {
+            coordBtn.onclick = function(){ loadCoordinationData(true); };
+        }
+    }
+
+    function slugifyCoord(value){
+        return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    }
+
+    function setCoordinationLoading(message){
+        var container = byId('coord-results');
+        if (!container) return;
+        container.innerHTML = '<div class="card rounded-2xl p-6 text-slate-200 border border-slate-700/60 bg-slate-900/40">'+escapeHtml(message || 'Carregando...')+'</div>';
+    }
+
+    function loadCoordinationData(forceReload){
+        if (!CoordAccess.granted) return;
+        var pessoaSel = byId('coord-pessoa');
+        var pessoa = pessoaSel ? pessoaSel.value : '';
+        var agrupSel = byId('coord-agrupamento');
+        var agrupamento = agrupSel ? agrupSel.value : 'day';
+        if (!pessoa) {
+            renderCoordination({ operations: [], message: 'Selecione uma pessoa para visualizar os dados.' });
+            return;
+        }
+        if (COORD.loading && !forceReload) return;
+        COORD.loading = true;
+        setCoordinationLoading('Carregando visão de coordenação...');
+        google.script.run
+            .withSuccessHandler(function(res){
+                COORD.loading = false;
+                renderCoordination(res || { operations: [] });
+            })
+            .withFailureHandler(function(err){
+                COORD.loading = false;
+                renderCoordination({ operations: [], error: err && err.message ? err.message : 'Erro ao carregar os dados.' });
+            })
+            .getCoordinationData({ pessoa: pessoa, agrupamento: agrupamento });
+    }
+
+    function updateCoordinationOperation(opName){
+        if (!opName) return;
+        var op = COORD.operationMap[opName];
+        if (!op) return;
+        var container = byId('coord-table-' + slugifyCoord(opName));
+        if (!container) return;
+        container.innerHTML = buildCoordinationTable(op, COORD.cpcTargets[opName]);
+    }
+
+    function renderCoordination(res){
+        var container = byId('coord-results');
+        if (!container) return;
+        if (!CoordAccess.granted) {
+            container.innerHTML = '<div class="card rounded-2xl p-6 text-slate-200 border border-slate-700/60 bg-slate-900/40">Área restrita. Informe a senha para visualizar.</div>';
+            return;
+        }
+        if (res && res.error) {
+            container.innerHTML = '<div class="card rounded-2xl p-6 border border-rose-500/40 bg-rose-900/20 text-rose-100">'+escapeHtml(res.error)+'</div>';
+            return;
+        }
+        var pessoaSel = byId('coord-pessoa');
+        var pessoa = pessoaSel ? pessoaSel.value : '';
+        if (!pessoa || (res && res.message)) {
+            var msg = res && res.message ? res.message : 'Selecione uma pessoa para visualizar os dados.';
+            container.innerHTML = '<div class="card rounded-2xl p-6 text-slate-200 border border-slate-700/60 bg-slate-900/40">'+escapeHtml(msg)+'</div>';
+            return;
+        }
+        var operations = (res && res.operations) ? res.operations.slice() : [];
+        if (!operations.length) {
+            container.innerHTML = '<div class="card rounded-2xl p-6 text-slate-200 border border-slate-700/60 bg-slate-900/40">Nenhuma operação configurada para essa pessoa no período selecionado.</div>';
+            return;
+        }
+        operations.sort(function(a,b){ return String(a.operacao||'').localeCompare(String(b.operacao||''), 'pt-BR'); });
+        COORD.operations = operations;
+        COORD.operationMap = {};
+        var frag = document.createDocumentFragment();
+        operations.forEach(function(op){
+            var opName = op.operacao || 'Operação';
+            COORD.operationMap[opName] = op;
+            var card = document.createElement('div');
+            card.className = 'card rounded-2xl p-6 space-y-4';
+
+            var header = document.createElement('div');
+            header.className = 'flex flex-wrap items-center justify-between gap-3';
+            var title = document.createElement('div');
+            title.className = 'text-lg font-bold text-slate-100';
+            title.textContent = opName;
+            header.appendChild(title);
+
+            var inputWrap = document.createElement('label');
+            inputWrap.className = 'flex items-center gap-2 text-sm text-slate-300';
+            inputWrap.innerHTML = '<span>CPC Alvo</span>';
+            var input = document.createElement('input');
+            input.type = 'number';
+            input.step = '0.01';
+            input.placeholder = '0.00';
+            input.className = 'pill rounded-lg px-3 py-2 text-sm w-28';
+            if (COORD.cpcTargets.hasOwnProperty(opName) && COORD.cpcTargets[opName] !== undefined) {
+                var val = COORD.cpcTargets[opName];
+                input.value = (val === null || val === undefined) ? '' : val;
+            }
+            input.dataset.operation = opName;
+            input.addEventListener('input', function(){
+                var name = this.dataset.operation;
+                if (!name) return;
+                var v = parseFloat(this.value);
+                if (isNaN(v)) {
+                    delete COORD.cpcTargets[name];
+                } else {
+                    COORD.cpcTargets[name] = v;
+                }
+                updateCoordinationOperation(name);
+            });
+            input.addEventListener('blur', function(){ updateCoordinationOperation(this.dataset.operation); });
+            inputWrap.appendChild(input);
+            header.appendChild(inputWrap);
+            card.appendChild(header);
+
+            var subtitle = document.createElement('div');
+            subtitle.className = 'text-sm font-semibold text-slate-300 uppercase tracking-wide';
+            subtitle.textContent = 'Análise de comparação por bloco';
+            card.appendChild(subtitle);
+
+            var tableContainer = document.createElement('div');
+            var slug = slugifyCoord(opName);
+            tableContainer.id = 'coord-table-' + slug;
+            tableContainer.innerHTML = buildCoordinationTable(op, COORD.cpcTargets[opName]);
+            card.appendChild(tableContainer);
+
+            frag.appendChild(card);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(frag);
+    }
+
+    function buildCoordinationTable(op, targetValue){
+        var blocks = (op && op.blocks) ? op.blocks.slice() : [];
+        if (!blocks.length) {
+            return '<div class="card rounded-xl p-4 border border-slate-700/60 bg-slate-900/40 text-sm text-slate-300">Sem dados disponíveis para esta operação nas últimas horas.</div>';
+        }
+        blocks.sort(function(a,b){
+            var pageA = String(a.page||'');
+            var pageB = String(b.page||'');
+            if (pageA !== pageB) return pageA.localeCompare(pageB, 'pt-BR');
+            return String(a.label||'').localeCompare(String(b.label||''), 'pt-BR');
+        });
+        var basisMap = {};
+        blocks.forEach(function(block){ basisMap[String(block.page||'')+'||'+String(block.label||'')] = block.suggestionBasis || {}; });
+        var target = parseFloat(targetValue);
+        if (!isFinite(target)) target = NaN;
+        var rows = blocks.map(function(block){
+            var metrics = block.metrics || {};
+            var suggestion = getCoordinationSuggestion(block, target, basisMap);
+            return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/50">'
+                + '<td class="py-2 px-2 text-slate-300">'+escapeHtml(block.page || '-')+'</td>'
+                + '<td class="py-2 px-2 text-right">'+money(metrics.revenue || 0)+'</td>'
+                + '<td class="py-2 px-2 text-right">'+num(metrics.impressions || 0, 0)+'</td>'
+                + '<td class="py-2 px-2 text-right">'+num(metrics.clicks || 0, 0)+'</td>'
+                + '<td class="py-2 px-2 text-right">'+pct(metrics.ctr || 0, 2)+'</td>'
+                + '<td class="py-2 px-2 text-right">'+money(metrics.ecpm || 0)+'</td>'
+                + '<td class="py-2 px-2 text-right">'+num(metrics.requests || 0, 0)+'</td>'
+                + '<td class="py-2 px-2 text-right">'+pct(metrics.coverage || 0, 2)+'</td>'
+                + '<td class="py-2 px-2 text-right">'+money(metrics.cpc || 0, 3)+'</td>'
+                + '<td class="py-2 px-2 text-left text-sm text-slate-200 whitespace-normal">'+escapeHtml(suggestion)+'</td>'
+                + '</tr>';
+        }).join('');
+        var head = '<thead class="text-slate-400"><tr>'
+            + '<th class="text-left py-2 px-2">Página</th>'
+            + '<th class="text-right py-2 px-2">Receita</th>'
+            + '<th class="text-right py-2 px-2">Impressões</th>'
+            + '<th class="text-right py-2 px-2">Cliques</th>'
+            + '<th class="text-right py-2 px-2">CTR</th>'
+            + '<th class="text-right py-2 px-2">eCPM</th>'
+            + '<th class="text-right py-2 px-2">Solicitações</th>'
+            + '<th class="text-right py-2 px-2">Cobertura</th>'
+            + '<th class="text-right py-2 px-2">CPC</th>'
+            + '<th class="text-left py-2 px-2">Sugestão de precificação</th>'
+            + '</tr></thead>';
+        return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+rows+'</tbody></table></div>';
+    }
+
+    function getCoordinationSuggestion(block, target, basisMap){
+        var label = String(block && block.label ? block.label : '');
+        var parte = String(block && block.parte ? block.parte : '');
+        var basis = block && block.suggestionBasis ? block.suggestionBasis : {};
+        if (!basis.hasData) {
+            return 'Sem dados recentes para sugerir ajuste';
+        }
+        var coverage = Number(basis.coverage || 0);
+        var cpc = Number(basis.cpc || 0);
+        var suggestion = '';
+        var reason = '';
+
+        function money3(val){ return money(val || 0, 3); }
+
+        if (parte === 'P1') {
+            var thresholds = label.toLowerCase().includes('interstitial') ? { high: 95, low: 80 } : { high: 80, low: 30 };
+            if (coverage > thresholds.high) {
+                suggestion = 'Aumentar a regra';
+                reason = 'Cobertura acima de '+thresholds.high+'%';
+            } else if (coverage < thresholds.low) {
+                suggestion = 'Reduzir a regra';
+                reason = 'Cobertura abaixo de '+thresholds.low+'%';
+            } else {
+                if (!isFinite(target) || target <= 0) {
+                    return 'Informe o CPC alvo para gerar uma sugestão';
+                }
+                if (cpc < target) {
+                    suggestion = 'Aumentar a regra';
+                    reason = 'CPC ('+money3(cpc)+') abaixo do alvo ('+money3(target)+')';
+                } else {
+                    suggestion = 'Manter a regra';
+                    reason = 'CPC ('+money3(cpc)+') dentro ou acima do alvo';
+                }
+            }
+        } else if (parte === 'P2' && label.toLowerCase().includes('mob_top')) {
+            if (coverage > 80) {
+                suggestion = 'Aumentar a regra';
+                reason = 'Cobertura acima de 80%';
+            } else if (coverage < 70) {
+                suggestion = 'Reduzir a regra';
+                reason = 'Cobertura abaixo de 70%';
+            } else {
+                suggestion = 'Manter a regra';
+                reason = 'Cobertura entre 70% e 80%';
+            }
+        } else if (parte === 'P2' && label.toLowerCase().includes('offerwall')) {
+            var ref = basisMap[String(block.page||'')+'||mob_top (P2)'];
+            if (!ref || !ref.hasData) {
+                return 'Sem referência do bloco mob_top (P2) para comparar';
+            }
+            var corr = Number(basis.cpcCorrigido || 0);
+            var refCpc = Number(ref.cpc || 0);
+            if (!(corr > 0)) {
+                return 'Sem dados de CPC corrigido suficientes';
+            }
+            if (corr < refCpc) {
+                suggestion = 'Aumentar a regra';
+                reason = 'CPC Corrigido ('+money3(corr)+') abaixo do mob_top P2 ('+money3(refCpc)+')';
+            } else {
+                suggestion = 'Manter a regra';
+                reason = 'CPC Corrigido maior ou igual ao mob_top P2';
+            }
+        } else if (parte === 'Quiz' && label.toLowerCase().includes('rewarded')) {
+            suggestion = 'Ajustar regra para CPC = CPA';
+            reason = 'Revisar valor de CPA antes de precificar';
+        }
+
+        if (!suggestion) return 'Sem sugestão disponível';
+        return suggestion + ' — ' + reason;
     }
 
     function getPricingSortState(network){
@@ -292,6 +658,8 @@
     var PRICING_SORT = {};
     var PQ = { options: [], selected: [], open:false };
     var CHART = { inst: null };
+    var COORD = { operations: [], operationMap: {}, cpcTargets: {}, loading: false };
+    var CoordAccess = { granted: false, password: '147963', pending: null };
 
     function showToast(message, type = 'info') {
         const container = byId('toast-container');
@@ -312,10 +680,48 @@
     }
 
     (function(){
-      byId('tab-dash').onclick = function(){ byId('view-dash').classList.remove('hidden'); byId('view-conf').classList.add('hidden'); this.classList.add('bg-blue-600','text-white'); byId('tab-conf').classList.remove('bg-blue-600','text-white'); };
-      byId('tab-conf').onclick = function(){ byId('view-conf').classList.remove('hidden'); byId('view-dash').classList.add('hidden'); this.classList.add('bg-blue-600','text-white'); byId('tab-dash').classList.remove('bg-blue-600','text-white'); };
-      byId('sub-ana').onclick = function(){ byId('analysis-content').classList.remove('hidden'); byId('compare-content').classList.add('hidden'); this.classList.add('bg-teal-600','text-white'); byId('sub-comp').classList.remove('bg-teal-600','text-white'); };
-      byId('sub-comp').onclick = function(){ byId('compare-content').classList.remove('hidden'); byId('analysis-content').classList.add('hidden'); this.classList.add('bg-teal-600','text-white'); byId('sub-ana').classList.remove('bg-teal-600','text-white'); };
+      var tabMap = {
+        dash: { button: byId('tab-dash'), view: byId('view-dash') },
+        conf: { button: byId('tab-conf'), view: byId('view-conf') },
+        coord: { button: byId('tab-coord'), view: byId('view-coord') }
+      };
+
+      function setActiveTab(tab){
+        if (tab === 'coord' && !CoordAccess.granted) {
+          showCoordPasswordModal(function(){ setActiveTab('coord'); });
+          return;
+        }
+        Object.keys(tabMap).forEach(function(key){
+          var cfg = tabMap[key];
+          if (!cfg.button || !cfg.view) return;
+          var isActive = (key === tab);
+          cfg.view.classList.toggle('hidden', !isActive);
+          cfg.button.classList.toggle('bg-blue-600', isActive);
+          cfg.button.classList.toggle('text-white', isActive);
+          if (!isActive) {
+            cfg.button.classList.remove('bg-blue-600','text-white');
+          }
+        });
+        if (tab === 'coord') {
+          loadCoordinationData();
+        }
+      }
+
+      Object.keys(tabMap).forEach(function(key){
+        var cfg = tabMap[key];
+        if (!cfg.button) return;
+        cfg.button.onclick = function(){ setActiveTab(key); };
+      });
+
+      setActiveTab('dash');
+      setupCoordinationAccess();
+
+      var subAna = byId('sub-ana');
+      var subComp = byId('sub-comp');
+      if (subAna && subComp) {
+        subAna.onclick = function(){ byId('analysis-content').classList.remove('hidden'); byId('compare-content').classList.add('hidden'); this.classList.add('bg-teal-600','text-white'); subComp.classList.remove('bg-teal-600','text-white'); };
+        subComp.onclick = function(){ byId('compare-content').classList.remove('hidden'); byId('analysis-content').classList.add('hidden'); this.classList.add('bg-teal-600','text-white'); subAna.classList.remove('bg-teal-600','text-white'); };
+      }
     })();
 
     function loadConfig(){ google.script.run.withSuccessHandler(function(res){ CFG = res || {}; fillPessoa(res.pessoas || []); renderCfgTable(res.rows || []); }).getConfig(); }
@@ -330,6 +736,13 @@
         elOp.innerHTML = '<option value="">— selecione —</option>' + ops.map(function(o){return '<option>'+o+'</option>';}).join('');
         resetPQ();
       };
+      var coordSel = byId('coord-pessoa');
+      if (coordSel) {
+        var previous = coordSel.value;
+        coordSel.innerHTML = '<option value="">— selecione —</option>' + (list||[]).map(function(p){return '<option>'+p+'</option>';}).join('');
+        if (previous && list && list.indexOf(previous) >= 0) coordSel.value = previous;
+        coordSel.onchange = function(){ loadCoordinationData(); };
+      }
       byId('f-operacao').onchange = function(){
         var key = byId('f-pessoa').value+'||'+this.value;
         var pags = (CFG.paginasByOp && CFG.paginasByOp[key]) ? CFG.paginasByOp[key] : [];

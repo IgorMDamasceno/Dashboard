@@ -612,3 +612,296 @@ function getDashboardData(params) {
 
   return { pages, compare, compareBlocks, granularity: gran, seriesChart, labelsChart, seriesChartByBlock, pricingRulesAdSeleto: pricingRulesAdSeleto, pricingRulesIgoal: pricingRulesIgoal };
 }
+
+function getCoordinationData(params) {
+  params = params || {};
+  var pessoa = params.pessoa;
+  var agrupamento = params.agrupamento === 'last6h' ? 'last6h' : 'day';
+  var startDate = params.startDate;
+  var endDate = params.endDate;
+
+  if (!pessoa) {
+    return { operations: [] };
+  }
+
+  var cfgRows = getConfig().rows.filter(function(r){ return r.pessoa === pessoa; });
+  if (!cfgRows.length) {
+    return { operations: [] };
+  }
+
+  var operationsMap = {};
+  cfgRows.forEach(function(row){
+    if (!operationsMap[row.operacao]) operationsMap[row.operacao] = { operacao: row.operacao, pages: {} };
+    if (!operationsMap[row.operacao].pages[row.pagina]) operationsMap[row.operacao].pages[row.pagina] = {};
+    operationsMap[row.operacao].pages[row.pagina][row.parte] = {
+      canal: row.canal,
+      urls: row.urls || [],
+      rede: row.rede,
+      moeda: row.moeda
+    };
+  });
+
+  var entries = cfgRows.map(function(row){
+    return {
+      operacao: row.operacao,
+      pagina: row.pagina,
+      parte: row.parte,
+      canal: row.canal,
+      urls: row.urls || []
+    };
+  });
+
+  if (!entries.length) {
+    return { operations: [] };
+  }
+
+  var baseSh = getBaseSheet_();
+  var data = baseSh.getDataRange().getValues();
+  if (!data.length) {
+    return { operations: Object.keys(operationsMap).map(function(name){ return { operacao: name, blocks: [] }; }) };
+  }
+
+  var headers = data[0] || [];
+  var idx = getHeaderIndexMap_(headers);
+  var rows = data.slice(1);
+
+  var col = {
+    date: idx[HEADER_MAP.date],
+    hour: idx[HEADER_MAP.hour],
+    channel: idx[HEADER_MAP.channel],
+    url: idx[HEADER_MAP.url],
+    adunit: idx[HEADER_MAP.adunit],
+    impressions: idx[HEADER_MAP.impressions],
+    clicks: idx[HEADER_MAP.clicks],
+    revenue: idx[HEADER_MAP.revenue],
+    requests: idx[HEADER_MAP.requests],
+    coverage: idx[HEADER_MAP.coverage],
+    viewability: idx[HEADER_MAP.viewability]
+  };
+
+  var minDate = startDate ? parseDate_(startDate) : null;
+  var maxDate = endDate ? parseDate_(endDate) : null;
+
+  var cutoffMs = null;
+  if (agrupamento === 'last6h') {
+    var maxMsMatched = 0;
+    rows.forEach(function(row){
+      var d = parseDate_(row[col.date]);
+      if (!d) return;
+      var h = parseInt(row[col.hour], 10) || 0;
+      var ms = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0, 0).getTime();
+      if (ms > maxMsMatched) maxMsMatched = ms;
+    });
+    if (maxMsMatched > 0) cutoffMs = maxMsMatched - (6 * 60 * 60 * 1000);
+  }
+
+  function rowDateOk_(row) {
+    var d = parseDate_(row[col.date]);
+    if (!d) return false;
+    if (agrupamento === 'last6h') {
+      if (cutoffMs === null) return false;
+      var h = parseInt(row[col.hour], 10) || 0;
+      var ms = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0, 0).getTime();
+      return ms >= cutoffMs;
+    }
+    if (minDate && d < minDate) return false;
+    if (maxDate && d > maxDate) return false;
+    return true;
+  }
+
+  function matchEntry_(row, entry) {
+    var rowCanal = String(row[col.channel] || '').toLowerCase();
+    if (entry.canal && rowCanal.indexOf(String(entry.canal).toLowerCase()) === -1) {
+      return false;
+    }
+    var normUrl = normUrlStrict_(row[col.url] || '');
+    var urls = entry.urls || [];
+    if (!urls.length) return true;
+    return urls.some(function(u){
+      return normUrl === u || normUrl.indexOf(u + '/') === 0;
+    });
+  }
+
+  function blankAgg_() {
+    return {
+      impressions: 0,
+      clicks: 0,
+      revenue: 0,
+      requests: 0,
+      coverage_w_sum: 0,
+      view_w_sum: 0,
+      weight_w_sum: 0,
+      coverage_sum: 0,
+      view_sum: 0,
+      row_count: 0
+    };
+  }
+
+  function pushRow_(agg, row) {
+    var impr = toNumber_(row[col.impressions]);
+    var clk = toNumber_(row[col.clicks]);
+    var rev = toNumber_(row[col.revenue]);
+    var req = toNumber_(row[col.requests]);
+    var cov = toNumber_(row[col.coverage]);
+    var view = toNumber_(row[col.viewability]);
+
+    agg.impressions += impr;
+    agg.clicks += clk;
+    agg.revenue += rev;
+    agg.requests += req;
+    agg.coverage_sum += cov;
+    agg.view_sum += view;
+    agg.row_count += 1;
+
+    if (req > 0) {
+      agg.coverage_w_sum += cov * req;
+      agg.view_w_sum += view * req;
+      agg.weight_w_sum += req;
+    }
+  }
+
+  function finalizeAgg_(agg) {
+    var impr = agg.impressions;
+    var clk = agg.clicks;
+    var rev = agg.revenue;
+    var req = agg.requests;
+
+    var coverage = agg.weight_w_sum > 0 ? (agg.coverage_w_sum / agg.weight_w_sum) * 100 : (agg.row_count > 0 ? (agg.coverage_sum / agg.row_count) * 100 : 0);
+    var viewability = agg.weight_w_sum > 0 ? (agg.view_w_sum / agg.weight_w_sum) * 100 : (agg.row_count > 0 ? (agg.view_sum / agg.row_count) * 100 : 0);
+
+    return {
+      impressions: impr,
+      clicks: clk,
+      revenue: rev,
+      requests: req,
+      ctr: impr > 0 ? (clk / impr) * 100 : 0,
+      ecpm: impr > 0 ? (rev * 1000 / impr) : 0,
+      cpc: clk > 0 ? rev / clk : 0,
+      coverage: coverage,
+      viewability: viewability
+    };
+  }
+
+  function classifyBlock_(adunit, parteName) {
+    var s = String(adunit || '').toLowerCase();
+    if (parteName === 'P1') {
+      if (s.indexOf('mob_top') !== -1) return { label: 'mob_top (P1)', parte: 'P1' };
+      if (s.indexOf('mob_interstitial') !== -1) return { label: 'mob_interstitial (P1)', parte: 'P1' };
+    } else if (parteName === 'P2') {
+      if (s.indexOf('mob_offerwall') !== -1 || s.indexOf('mob_rewarded') !== -1) return { label: 'mob_offerwall (P2)', parte: 'P2' };
+      if (s.indexOf('mob_top') !== -1) return { label: 'mob_top (P2)', parte: 'P2' };
+    } else if (parteName === 'Quiz') {
+      if (s.indexOf('rewarded') !== -1) return { label: 'rewarded (Quiz)', parte: 'Quiz' };
+    }
+    return null;
+  }
+
+  function mergeAgg_(target, source) {
+    if (!source) return;
+    target.impressions += source.impressions || 0;
+    target.clicks += source.clicks || 0;
+    target.revenue += source.revenue || 0;
+    target.requests += source.requests || 0;
+    target.coverage_w_sum += source.coverage_w_sum || 0;
+    target.view_w_sum += source.view_w_sum || 0;
+    target.weight_w_sum += source.weight_w_sum || 0;
+    target.coverage_sum += source.coverage_sum || 0;
+    target.view_sum += source.view_sum || 0;
+    target.row_count += source.row_count || 0;
+  }
+
+  function formatHourLabel_(ms) {
+    var d = new Date(ms);
+    var day = ('0' + d.getDate()).slice(-2);
+    var month = ('0' + (d.getMonth() + 1)).slice(-2);
+    var hour = ('0' + d.getHours()).slice(-2);
+    return day + '/' + month + ' ' + hour + 'h';
+  }
+
+  function buildSuggestionBasis_(baseKey, bucketMap) {
+    var prefix = baseKey + '||';
+    var hourKeys = Object.keys(bucketMap).filter(function(k){ return k.indexOf(prefix) === 0; }).map(function(k){
+      var parts = k.split('||');
+      return parts.length >= 4 ? +parts[3] : null;
+    }).filter(function(v){ return v; }).sort(function(a,b){ return a - b; });
+
+    if (hourKeys.length < 2) {
+      return { hasData: false };
+    }
+
+    var sliceStart = Math.max(0, hourKeys.length - 4);
+    var relevant = hourKeys.slice(sliceStart, hourKeys.length - 1);
+    if (!relevant.length) {
+      return { hasData: false };
+    }
+
+    var agg = blankAgg_();
+    relevant.forEach(function(ms){
+      var key = prefix + ms;
+      mergeAgg_(agg, bucketMap[key]);
+    });
+
+    var metrics = finalizeAgg_(agg);
+    var coverage = metrics.coverage || 0;
+    var perdaUsuario = (agg.requests * (coverage / 100)) - agg.impressions;
+    var correctedClicks = agg.clicks + Math.ceil(Math.max(0, perdaUsuario));
+    var cpcCorrigido = correctedClicks > 0 ? (agg.revenue / correctedClicks) : 0;
+
+    return {
+      hasData: true,
+      coverage: coverage,
+      cpc: metrics.cpc || 0,
+      cpcCorrigido: cpcCorrigido,
+      hoursUsed: relevant.map(formatHourLabel_)
+    };
+  }
+
+  var blockAgg = {};
+  var blockHourAgg = {};
+
+  rows.forEach(function(row){
+    if (!rowDateOk_(row)) return;
+    var d = parseDate_(row[col.date]);
+    if (!d) return;
+    var h = parseInt(row[col.hour], 10) || 0;
+    var ms = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, 0, 0, 0).getTime();
+
+    entries.forEach(function(entry){
+      if (!matchEntry_(row, entry)) return;
+      var adunit = String(row[col.adunit] || '').trim() || '(sem adunit)';
+      var classification = classifyBlock_(adunit, entry.parte);
+      if (!classification) return;
+      var baseKey = entry.operacao + '||' + entry.pagina + '||' + classification.label;
+      if (!blockAgg[baseKey]) blockAgg[baseKey] = blankAgg_();
+      pushRow_(blockAgg[baseKey], row);
+      var hourKey = baseKey + '||' + ms;
+      if (!blockHourAgg[hourKey]) blockHourAgg[hourKey] = blankAgg_();
+      pushRow_(blockHourAgg[hourKey], row);
+    });
+  });
+
+  var operations = Object.keys(operationsMap).map(function(opName){
+    var blocks = [];
+    Object.keys(blockAgg).forEach(function(key){
+      if (key.indexOf(opName + '||') !== 0) return;
+      var parts = key.split('||');
+      var pageName = parts[1];
+      var label = parts[2];
+      var agg = blockAgg[key];
+      var metrics = finalizeAgg_(agg);
+      var suggestionBasis = buildSuggestionBasis_(key, blockHourAgg);
+      var parte = '';
+      if (label.indexOf('(P1)') !== -1) parte = 'P1';
+      else if (label.indexOf('(P2)') !== -1) parte = 'P2';
+      else if (label.indexOf('(Quiz)') !== -1) parte = 'Quiz';
+      blocks.push({ page: pageName, label: label, parte: parte, metrics: metrics, suggestionBasis: suggestionBasis });
+    });
+    blocks.sort(function(a,b){
+      if (a.page !== b.page) return String(a.page || '').localeCompare(String(b.page || ''));
+      return String(a.label || '').localeCompare(String(b.label || ''));
+    });
+    return { operacao: opName, blocks: blocks };
+  });
+
+  return { operations: operations };
+}
