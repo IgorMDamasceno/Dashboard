@@ -66,16 +66,6 @@
             <p class="text-slate-400 mt-1">Visualize o fluxo <b>Quiz → P1 → P2</b> por <i>Página de Queda</i> e compare os resultados.</p>
           </div>
         </div>
-        <div class="flex flex-wrap gap-3">
-          <button id="btn-sync-adseleto" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-xl shadow-lg shadow-indigo-900/50 transition-all duration-300 flex items-center gap-2">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a.75.75 0 01.75.75v1.313a.75.75 0 01-1.5 0V3.75A.75.75 0 0110 3zM10 15a.75.75 0 01.75.75v1.313a.75.75 0 01-1.5 0V15.75A.75.75 0 0110 15zM5.334 6.406a.75.75 0 011.06 0l.93.931a.75.75 0 11-1.06 1.06l-.93-.931a.75.75 0 010-1.06zM12.676 13.748a.75.75 0 011.06 0l.93.931a.75.75 0 11-1.06 1.06l-.93-.931a.75.75 0 010-1.06zM3 10a.75.75 0 01.75-.75h1.313a.75.75 0 010 1.5H3.75A.75.75 0 013 10zm12 0a.75.75 0 01.75-.75h1.313a.75.75 0 010 1.5H15.75a.75.75 0 01-.75-.75zm-7.735-4.656a.75.75 0 010-1.06l.93-.931a.75.75 0 011.06 1.06l-.93.931a.75.75 0 01-1.06 0zM13.748 12.676a.75.75 0 010-1.06l.93-.931a.75.75 0 011.06 1.06l-.93.931a.75.75 0 01-1.06 0zM10 7a3 3 0 100 6 3 3 0 000-6z" /></svg>
-            Sincronizar Precificação PMD
-          </button>
-          <button id="btn-sync-igoal" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-xl shadow-lg shadow-emerald-900/50 transition-all duration-300 flex items-center gap-2">
-            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2.5 10a7.5 7.5 0 1114.474 2.474l.89.89a.75.75 0 11-1.06 1.06l-.89-.89A7.5 7.5 0 012.5 10zm7.5-6a6 6 0 100 12 6 6 0 000-12zm.75 3.75a.75.75 0 00-1.5 0v2.5c0 .199.079.39.22.53l1.75 1.75a.75.75 0 101.06-1.06l-1.53-1.53V7.75z"/></svg>
-            Sincronizar Precificação Igoal
-          </button>
-        </div>
       </div>
       <div class="mt-6 inline-flex rounded-xl pill p-1">
         <button id="tab-dash" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold flex items-center gap-2 transition-all">
@@ -114,7 +104,7 @@
               <button id="pq-toggle" type="button" class="w-full pill rounded-lg px-3 py-2 text-left text-sm" aria-haspopup="true" aria-expanded="false">
                 <span id="pq-summary" class="text-slate-300">— selecione —</span>
               </button>
-              <div id="pq-panel" class="hidden absolute left-0 right-0 mt-1 card rounded-xl p-3 z-50 flex flex-col"></div>
+              <div id="pq-panel" class="hidden absolute left-0 right-0 mt-1 card rounded-xl p-3 z-50 flex flex-col shadow-2xl max-h-80"></div>
             </div>
           </div>
           <div>
@@ -565,13 +555,6 @@
             });
         });
 
-        var legend = '<div class="flex flex-wrap gap-2 mb-4 text-xs">'
-            + '<span class="px-2 py-1 rounded-lg border border-blue-600 bg-blue-900/30 text-blue-300">mob_top</span>'
-            + '<span class="px-2 py-1 rounded-lg border border-violet-600 bg-violet-900/30 text-violet-300">mob_interstitial</span>'
-            + '<span class="px-2 py-1 rounded-lg border border-amber-600 bg-amber-900/30 text-amber-300">mob_offerwall</span>'
-            + '<span class="px-2 py-1 rounded-lg border border-emerald-600 bg-emerald-900/30 text-emerald-300">rewarded</span>'
-            + '</div>';
-
         function tableFor(list){
             if (!list || !list.length) return '';
             list.sort(function(a,b){
@@ -639,7 +622,7 @@
         var p1Section = sectionHtml('P1', 'Análise P1', 'border border-blue-700 bg-blue-900/10', 'text-blue-300');
         var p2Section = sectionHtml('P2', 'Análise P2', 'border border-teal-700 bg-teal-900/10', 'text-teal-300');
 
-        var content = legend;
+        var content = '';
         var anySection = false;
         [quizSection, p1Section, p2Section].forEach(function(section){
             if (section) {
@@ -772,10 +755,11 @@
     var LAST_RES = null;
     var SORT = { by: 'revenue', dir: 'desc' };
     var PRICING_SORT = {};
-    var PQ = { options: [], selected: [], open:false };
+    var PQ = { options: [], selected: [], open:false, searchTerm: '' };
     var CHART = { inst: null };
     var COORD = { operations: [], operationMap: {}, cpcTargets: {}, loading: false };
     var CoordAccess = { granted: false, password: '147963', pending: null };
+    var SYNC_TIMERS = {};
 
     function showToast(message, type = 'info') {
         const container = byId('toast-container');
@@ -881,6 +865,7 @@
     function setPQOptions(arr){
       PQ.options = (arr||[]).slice();
       PQ.selected = [];
+      PQ.searchTerm = '';
       updatePQSummary();
       var search = byId('pq-search');
       if (search) search.value = '';
@@ -888,13 +873,21 @@
     }
     function updatePQSummary(){ var len=PQ.selected.length; var sum = len===0 ? '— selecione —' : (len===1 ? PQ.selected[0] : PQ.selected.slice(0,2).join(', ')+(len>2?' +'+(len-2):'')); byId('pq-summary').textContent = sum; }
     
+    function getVisiblePQOptions(term){
+      var normalized = (term || '').toLowerCase();
+      return PQ.options.filter(function(opt){
+        return !normalized || String(opt).toLowerCase().includes(normalized);
+      });
+    }
+
     function renderPQOptions(){
       var panel = byId('pq-panel');
-      
-      if (!panel.dataset.initialized) {
-        panel.innerHTML = `
+      if (!panel) return;
+
+      var activeSearch = PQ.searchTerm || '';
+      panel.innerHTML = `
           <input id="pq-search" type="text" class="pill w-full px-3 py-2 mb-2 text-sm" placeholder="Pesquisar páginas...">
-          <div id="pq-options-list" class="flex-grow overflow-auto space-y-1 max-h-60 pr-1"></div>
+          <div id="pq-options-list" class="flex-grow overflow-auto space-y-1 max-h-72 pr-1"></div>
           <div class="flex justify-between mt-2 pt-2 border-t border-slate-700/60 text-xs text-slate-400">
             <div class="flex gap-3">
               <button id="pq-all" type="button" class="underline hover:text-white">Selecionar visíveis</button>
@@ -902,56 +895,66 @@
             </div>
             <button id="pq-clear-all" type="button" class="underline hover:text-rose-400">Limpar tudo</button>
           </div>`;
-        
-        panel.querySelector('#pq-search').oninput = function(){ updatePQOptionsList(this.value); };
-        panel.querySelector('#pq-all').onclick = function(){
-            var visibleOptions = PQ.options.filter(function(opt){
-                return String(opt).toLowerCase().includes(byId('pq-search').value.toLowerCase());
-            });
-            visibleOptions.forEach(function(opt){ if(!PQ.selected.includes(opt)) PQ.selected.push(opt); }); 
-            updatePQOptionsList(byId('pq-search').value); 
-            updatePQSummary(); 
-        };
-        panel.querySelector('#pq-none').onclick = function(){ 
-            var visibleOptions = PQ.options.filter(function(opt){
-                return String(opt).toLowerCase().includes(byId('pq-search').value.toLowerCase());
-            });
-            PQ.selected = PQ.selected.filter(function(sel){ return !visibleOptions.includes(sel); }); 
-            updatePQOptionsList(byId('pq-search').value);
-            updatePQSummary(); 
-        };
-        panel.querySelector('#pq-clear-all').onclick = function() {
-            PQ.selected = [];
-            updatePQOptionsList(byId('pq-search').value);
-            updatePQSummary();
-        };
-        panel.dataset.initialized = "true";
-      }
-      
-      updatePQOptionsList();
+
+      var searchInput = panel.querySelector('#pq-search');
+      searchInput.value = activeSearch;
+      searchInput.oninput = function(){ updatePQOptionsList(this.value); };
+
+      panel.querySelector('#pq-all').onclick = function(){
+        var visibleOptions = getVisiblePQOptions(PQ.searchTerm);
+        visibleOptions.forEach(function(opt){ if (!PQ.selected.includes(opt)) PQ.selected.push(opt); });
+        updatePQOptionsList(PQ.searchTerm);
+        updatePQSummary();
+      };
+      panel.querySelector('#pq-none').onclick = function(){
+        var visibleOptions = getVisiblePQOptions(PQ.searchTerm);
+        PQ.selected = PQ.selected.filter(function(sel){ return !visibleOptions.includes(sel); });
+        updatePQOptionsList(PQ.searchTerm);
+        updatePQSummary();
+      };
+      panel.querySelector('#pq-clear-all').onclick = function(){
+        PQ.selected = [];
+        updatePQOptionsList('');
+        updatePQSummary();
+      };
+
+      updatePQOptionsList(activeSearch);
     }
     
     function updatePQOptionsList(filterValue) {
-      var searchInput = byId('pq-search');
-      filterValue = (filterValue === undefined ? ((searchInput && searchInput.value) || '') : filterValue).toLowerCase();
       var listContainer = byId('pq-options-list');
       if (!listContainer) return;
-      var visibleOptions = PQ.options.filter(function(x){return !filterValue || String(x).toLowerCase().includes(filterValue);});
-      
-      listContainer.innerHTML = visibleOptions.map(function(pg){ 
-        var checked = PQ.selected.includes(pg) ? 'checked' : ''; 
-        return '<label class="flex items-center gap-2 text-sm p-1.5 rounded-md hover:bg-slate-700/50 cursor-pointer"><input type="checkbox" value="'+pg+'" '+checked+'> <span>'+pg+'</span></label>'; 
+
+      if (typeof filterValue === 'string') {
+        PQ.searchTerm = filterValue;
+      } else {
+        var searchInput = byId('pq-search');
+        PQ.searchTerm = searchInput ? searchInput.value : (PQ.searchTerm || '');
+      }
+
+      var searchInput = byId('pq-search');
+      if (searchInput && searchInput.value !== PQ.searchTerm) {
+        searchInput.value = PQ.searchTerm;
+      }
+
+      var visibleOptions = getVisiblePQOptions(PQ.searchTerm);
+
+      listContainer.innerHTML = visibleOptions.map(function(pg){
+        var checked = PQ.selected.includes(pg) ? 'checked' : '';
+        return '<label class="flex items-center gap-2 text-sm p-1.5 rounded-md hover:bg-slate-700/50 cursor-pointer"><input type="checkbox" value="'+pg+'" '+checked+'> <span>'+pg+'</span></label>';
       }).join('');
-      
-      listContainer.querySelectorAll('input[type=checkbox]').forEach(function(cb){ 
-        cb.onchange = function(){ 
+
+      listContainer.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+        cb.onchange = function(){
           var v = this.value;
-          var idx = PQ.selected.indexOf(v); 
+          var idx = PQ.selected.indexOf(v);
           if(this.checked && idx === -1) PQ.selected.push(v);
           else if (!this.checked && idx !== -1) PQ.selected.splice(idx, 1);
-          updatePQSummary(); 
-        }; 
+          updatePQSummary();
+        };
       });
+
+      updatePQSummary();
     }
 
     function wireFilters(){
@@ -965,33 +968,6 @@
         google.script.run.withSuccessHandler(renderDashboard).getDashboardData(params);
       };
       
-      function wireSyncButton(id, runner) {
-        var btn = byId(id);
-        if (!btn) return;
-        btn.onclick = function() {
-          var originalContent = btn.innerHTML;
-          btn.innerHTML = 'Sincronizando...';
-          btn.disabled = true;
-
-          const callbackHandler = function(response, isSuccess) {
-              try {
-                  if (isSuccess) { showToast(response.message, response.ok ? 'success' : 'error'); }
-                  else { showToast('Erro de comunicação com o servidor:\n' + response.message, 'error'); }
-              } finally {
-                  btn.innerHTML = originalContent;
-                  btn.disabled = false;
-              }
-          };
-
-          google.script.run
-              .withSuccessHandler(function(res) { callbackHandler(res, true); })
-              .withFailureHandler(function(err) { callbackHandler(err, false); })
-              [runner]();
-        };
-      }
-
-      wireSyncButton('btn-sync-adseleto', 'runAdSeletoPricingUpdate');
-      wireSyncButton('btn-sync-igoal', 'runIgoalPricingUpdate');
     }
 
     function toggleSort(k) {
@@ -1127,7 +1103,7 @@
       if(res.compare&&res.compare.length){var cmp=document.createElement('div');cmp.className='card rounded-2xl p-5';cmp.innerHTML='<h3 class="text-lg font-bold mb-3">Comparativo — Total da Página</h3><div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">CPC</th><th class="text-right py-2 pr-2">RPS</th><th class="text-right py-2 pr-2">Taxa de interação</th></tr></thead><tbody>'+res.compare.map(function(r){return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(r.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(r.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(r.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(r.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(r.ecpm)+'</td><td class="py-2 pr-2 text-right">'+money(r.cpc,3)+'</td><td class="py-2 pr-2 text-right">'+money(r.rps)+'</td><td class="py-2 pr-2 text-right">'+pct(r.interactionRate)+'</td></tr>';}).join('')+'</tbody></table></div>';hostC.appendChild(cmp);}
       var chartBox=document.createElement('div');chartBox.className='card rounded-2xl p-5';chartBox.innerHTML='<div class="flex items-center justify-between gap-4 flex-wrap"><h3 class="text-lg font-bold">Evolução por Hora</h3><div class="flex items-center gap-4 text-sm flex-wrap"><div class="flex items-center gap-2"><label for="cmp-block" class="text-slate-300">Bloco:</label><select id="cmp-block" class="pill rounded-lg px-3 py-1.5"><option value="Total" selected>Total</option><option value="mob_top (P1)">mob_top (P1)</option><option value="mob_interstitial (P1)">mob_interstitial (P1)</option><option value="mob_offerwall (P2)">mob_offerwall (P2)</option><option value="mob_top (P2)">mob_top (P2)</option><option value="rewarded (Quiz)">rewarded (Quiz)</option></select></div><div class="flex items-center gap-2"><label for="cmp-metric" class="text-slate-300">Métrica:</label><select id="cmp-metric" class="pill rounded-lg px-3 py-1.5"><option value="rps" selected>RPS</option><option value="cpc">CPC</option><option value="interactionRate">Taxa de interação</option><option value="ecpm">eCPM</option><option value="coverage">Cobertura</option><option value="effectiveEcpm">eCPM Efetivo</option></select></div></div></div><div class="relative w-full h-96 mt-4"><canvas id="cmp-canvas"></canvas></div>'+(!res.seriesChart||!res.seriesChart.length?'<div class="text-slate-400 text-sm mt-2">Sem dados suficientes para o gráfico.</div>':'');hostC.appendChild(chartBox);
       if(res.seriesChart&&res.seriesChart.length){function redraw(){setupCompareChart(LAST_RES);}byId('cmp-metric').onchange=redraw;byId('cmp-block').onchange=redraw;redraw();}
-      if(res.compareBlocks&&res.compareBlocks.length){var leg='<div class="flex flex-wrap gap-2 mb-3 text-xs"><span class="px-2 py-1 rounded-lg border border-blue-600 bg-blue-900/30 text-blue-300">mob_top</span><span class="px-2 py-1 rounded-lg border border-violet-600 bg-violet-900/30 text-violet-300">mob_interstitial</span><span class="px-2 py-1 rounded-lg border border-amber-600 bg-amber-900/30 text-amber-300">mob_offerwall</span><span class="px-2 py-1 rounded-lg border border-emerald-600 bg-emerald-900/30 text-emerald-300">rewarded</span></div>';var gr={P1:{},P2:{},Quiz:{}};var o1=['mob_top (P1)','mob_interstitial (P1)'],o2=['mob_offerwall (P2)','mob_top (P2)'],oq=['rewarded (Quiz)'];res.compareBlocks.forEach(function(r){var p=r.parte;if(!gr[p])gr[p]={};if(!gr[p][r.label])gr[p][r.label]=[];gr[p][r.label].push(r);});function tableFor(list){list.sort(function(a,b){return a.page<b.page?-1:(a.page>b.page?1:b.metrics.revenue-a.metrics.revenue);});return '<div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">Solicitações</th><th class="text-right py-2 pr-2">Cobertura</th><th class="text-right py-2 pr-2">CPC</th></tr></thead><tbody>'+list.map(function(r){var m=r.metrics;return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(m.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(m.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(m.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(m.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(m.ecpm)+'</td><td class="py-2 pr-2 text-right">'+num(m.requests,0)+'</td><td class="py-2 pr-2 text-right">'+pct(m.coverage,2)+'</td><td class="py-2 pr-2 text-right">'+money(m.cpc,3)+'</td></tr>';}).join('')+'</tbody></table></div>';}var cmpb=document.createElement('div');cmpb.className='card rounded-2xl p-5 space-y-6';var html='<h3 class="text-lg font-bold mb-2">Comparativo por Blocos</h3>'+leg;var p1h='',p2h='',qh='';oq.forEach(function(lbl){if(gr.Quiz&&gr.Quiz[lbl]&&gr.Quiz[lbl].length)qh+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.Quiz[lbl])+'</div>';});if(qh)html+='<div class="card rounded-xl p-4 border border-emerald-700 bg-emerald-900/10"><h4 class="text-base font-bold mb-3 text-emerald-300">Análise Quiz</h4><div class="space-y-4">'+qh+'</div></div>';o1.forEach(function(lbl){if(gr.P1&&gr.P1[lbl]&&gr.P1[lbl].length)p1h+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.P1[lbl])+'</div>';});if(p1h)html+='<div class="card rounded-xl p-4 border border-blue-700 bg-blue-900/10"><h4 class="text-base font-bold mb-3 text-blue-300">Análise P1</h4><div class="space-y-4">'+p1h+'</div></div>';o2.forEach(function(lbl){if(gr.P2&&gr.P2[lbl]&&gr.P2[lbl].length)p2h+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.P2[lbl])+'</div>';});if(p2h)html+='<div class="card rounded-xl p-4 border border-teal-700 bg-teal-900/10"><h4 class="text-base font-bold mb-3 text-teal-300">Análise P2</h4><div class="space-y-4">'+p2h+'</div></div>';cmpb.innerHTML=html;hostC.appendChild(cmpb);}
+      if(res.compareBlocks&&res.compareBlocks.length){var gr={P1:{},P2:{},Quiz:{}};var o1=['mob_top (P1)','mob_interstitial (P1)'],o2=['mob_offerwall (P2)','mob_top (P2)'],oq=['rewarded (Quiz)'];res.compareBlocks.forEach(function(r){var p=r.parte;if(!gr[p])gr[p]={};if(!gr[p][r.label])gr[p][r.label]=[];gr[p][r.label].push(r);});function tableFor(list){list.sort(function(a,b){return a.page<b.page?-1:(a.page>b.page?1:b.metrics.revenue-a.metrics.revenue);});return '<div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">Solicitações</th><th class="text-right py-2 pr-2">Cobertura</th><th class="text-right py-2 pr-2">CPC</th></tr></thead><tbody>'+list.map(function(r){var m=r.metrics;return '<tr class="border-t border-slate-700/60 hover:bg-slate-800/60"><td class="py-2 pr-2">'+r.page+'</td><td class="py-2 pr-2 text-right">'+money(m.revenue)+'</td><td class="py-2 pr-2 text-right">'+num(m.impressions,0)+'</td><td class="py-2 pr-2 text-right">'+num(m.clicks,0)+'</td><td class="py-2 pr-2 text-right">'+pct(m.ctr,2)+'</td><td class="py-2 pr-2 text-right">'+money(m.ecpm)+'</td><td class="py-2 pr-2 text-right">'+num(m.requests,0)+'</td><td class="py-2 pr-2 text-right">'+pct(m.coverage,2)+'</td><td class="py-2 pr-2 text-right">'+money(m.cpc,3)+'</td></tr>';}).join('')+'</tbody></table></div>';}var cmpb=document.createElement('div');cmpb.className='card rounded-2xl p-5 space-y-6';var html='<h3 class="text-lg font-bold mb-2">Comparativo por Blocos</h3>';var p1h='',p2h='',qh='';oq.forEach(function(lbl){if(gr.Quiz&&gr.Quiz[lbl]&&gr.Quiz[lbl].length)qh+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.Quiz[lbl])+'</div>';});if(qh)html+='<div class="card rounded-xl p-4 border border-emerald-700 bg-emerald-900/10"><h4 class="text-base font-bold mb-3 text-emerald-300">Análise Quiz</h4><div class="space-y-4">'+qh+'</div></div>';o1.forEach(function(lbl){if(gr.P1&&gr.P1[lbl]&&gr.P1[lbl].length)p1h+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.P1[lbl])+'</div>';});if(p1h)html+='<div class="card rounded-xl p-4 border border-blue-700 bg-blue-900/10"><h4 class="text-base font-bold mb-3 text-blue-300">Análise P1</h4><div class="space-y-4">'+p1h+'</div></div>';o2.forEach(function(lbl){if(gr.P2&&gr.P2[lbl]&&gr.P2[lbl].length)p2h+='<div class="p-3 rounded-lg border border-slate-700 bg-slate-800/30"><h5 class="font-semibold text-sm mb-2 text-slate-200">'+lbl+'</h5>'+tableFor(gr.P2[lbl])+'</div>';});if(p2h)html+='<div class="card rounded-xl p-4 border border-teal-700 bg-teal-900/10"><h4 class="text-base font-bold mb-3 text-teal-300">Análise P2</h4><div class="space-y-4">'+p2h+'</div></div>';cmpb.innerHTML=html;hostC.appendChild(cmpb);}
     }
 
     function renderSuggestions(pageName, partData, cpcAlvo, network) {
@@ -1512,7 +1488,31 @@
             card.classList.toggle('hidden');
         }
     }
-    
+
+    function schedulePricingSync(network) {
+        var runner = (network === 'Igoal') ? 'runIgoalPricingUpdate' : 'runAdSeletoPricingUpdate';
+        if (!runner) return;
+        if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+
+        if (SYNC_TIMERS[network]) {
+            clearTimeout(SYNC_TIMERS[network]);
+        }
+
+        SYNC_TIMERS[network] = setTimeout(function(){
+            SYNC_TIMERS[network] = null;
+            google.script.run
+                .withSuccessHandler(function(res){
+                    var ok = (res && typeof res.ok !== 'undefined') ? !!res.ok : true;
+                    var message = (res && res.message) ? res.message : 'Sincronização concluída.';
+                    showToast(message, ok ? 'success' : 'error');
+                })
+                .withFailureHandler(function(err){
+                    var message = err && err.message ? err.message : 'Erro desconhecido.';
+                    showToast('Falha na sincronização automática:\n' + message, 'error');
+                })[runner]();
+        }, 5000);
+    }
+
     function savePricingRules(event) {
         event.preventDefault();
         const form = event.target;
@@ -1542,7 +1542,7 @@
 
             google.script.run.withSuccessHandler(function(res) {
                 if (res.ok) {
-                    showToast('Regras salvas na planilha com sucesso!\nElas serão enviadas na próxima sincronização.', 'success');
+                    showToast('Regras salvas na planilha com sucesso!\nSincronização automática será enviada em instantes.', 'success');
                     const updatedRules = res.rules || [];
                     updatedRules.forEach(newRule => {
                         const index = (LAST_RES.pricingRulesAdSeleto || []).findIndex(r => String(r.spnprice_id) === String(newRule.spnprice_id));
@@ -1550,6 +1550,7 @@
                         else { LAST_RES.pricingRulesAdSeleto.push(newRule); }
                     });
                     form.closest('.card').classList.add('hidden');
+                    schedulePricingSync('AdSeleto');
                 } else {
                     showToast('Falha ao salvar as regras: ' + (res.message || 'Erro desconhecido.'), 'error');
                 }
@@ -1581,7 +1582,7 @@
 
             google.script.run.withSuccessHandler(function(res) {
                 if (res.ok) {
-                    showToast('Regras da Igoal salvas na planilha!\nElas serão enviadas na próxima sincronização.', 'success');
+                    showToast('Regras da Igoal salvas na planilha!\nSincronização automática será enviada em instantes.', 'success');
                     const updatedRules = res.rules || [];
                     updatedRules.forEach(newRule => {
                         if (!newRule.company_id) newRule.company_id = companyId;
@@ -1591,6 +1592,7 @@
                         else { LAST_RES.pricingRulesIgoal.push(newRule); }
                     });
                     form.closest('.card').classList.add('hidden');
+                    schedulePricingSync('Igoal');
                 } else {
                     showToast('Falha ao salvar as regras: ' + (res.message || 'Erro desconhecido.'), 'error');
                 }
