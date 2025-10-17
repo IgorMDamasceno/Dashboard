@@ -92,16 +92,24 @@
         <div class="grid sm:grid-cols-2 lg:grid-cols-6 gap-4">
           <div>
             <label class="block text-sm font-medium text-slate-400 mb-1">Pessoa</label>
-            <div class="space-y-2">
-              <input id="f-pessoa-search" type="text" class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Buscar pessoa...">
-              <select id="f-pessoa" class="w-full pill rounded-lg px-3 py-2 text-sm"></select>
+            <div id="f-pessoa-select" class="relative">
+              <input type="hidden" id="f-pessoa">
+              <button id="f-pessoa-toggle" type="button" class="w-full pill rounded-lg px-3 py-2 text-left text-sm flex items-center justify-between gap-2">
+                <span id="f-pessoa-summary" class="truncate text-slate-300">— selecione —</span>
+                <svg class="w-4 h-4 text-slate-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" /></svg>
+              </button>
+              <div id="f-pessoa-panel" class="hidden card rounded-xl p-3 z-50 flex flex-col shadow-2xl max-h-80"></div>
             </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-400 mb-1">Operação</label>
-            <div class="space-y-2">
-              <input id="f-operacao-search" type="text" class="w-full pill rounded-lg px-3 py-2 text-sm" placeholder="Buscar operação..." disabled>
-              <select id="f-operacao" class="w-full pill rounded-lg px-3 py-2 text-sm" disabled></select>
+            <div id="f-operacao-select" class="relative">
+              <input type="hidden" id="f-operacao">
+              <button id="f-operacao-toggle" type="button" class="w-full pill rounded-lg px-3 py-2 text-left text-sm flex items-center justify-between gap-2 opacity-60 cursor-not-allowed" disabled>
+                <span id="f-operacao-summary" class="truncate text-slate-400">— selecione —</span>
+                <svg class="w-4 h-4 text-slate-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" /></svg>
+              </button>
+              <div id="f-operacao-panel" class="hidden card rounded-xl p-3 z-50 flex flex-col shadow-2xl max-h-80"></div>
             </div>
           </div>
           <div class="lg:col-span-2">
@@ -283,21 +291,205 @@
     }
 
     var SELECT_MODELS = {};
+    var ACTIVE_SEARCHABLE = null;
 
     function initSearchableSelect(selectId, placeholder){
-        if (!SELECT_MODELS[selectId]) {
-            SELECT_MODELS[selectId] = { placeholder: placeholder === undefined ? '— selecione —' : placeholder, source: [], searchTerm: '' };
+        var model = SELECT_MODELS[selectId];
+        if (!model) {
+            model = SELECT_MODELS[selectId] = {
+                id: selectId,
+                placeholder: placeholder === undefined ? '— selecione —' : placeholder,
+                source: [],
+                searchTerm: '',
+                value: '',
+                disabled: false,
+                open: false,
+                onChange: null,
+                searchPlaceholder: selectId === 'f-pessoa' ? 'Pesquisar pessoas...' : (selectId === 'f-operacao' ? 'Pesquisar operações...' : 'Pesquisar...')
+            };
         } else if (placeholder !== undefined) {
-            SELECT_MODELS[selectId].placeholder = placeholder;
+            model.placeholder = placeholder;
         }
-        var input = byId(selectId + '-search');
-        if (input) {
-            input.addEventListener('input', function(){
-                var model = SELECT_MODELS[selectId];
-                if (!model) return;
-                model.searchTerm = this.value || '';
-                renderSearchableSelect(selectId);
+
+        model.toggle = byId(selectId + '-toggle');
+        model.panel = byId(selectId + '-panel');
+        model.summary = byId(selectId + '-summary');
+        model.hidden = byId(selectId);
+
+        if (model.panel && !model.panel.dataset.floating) {
+            model.panel.dataset.floating = 'true';
+            model.panel.classList.add('hidden');
+            model.panel.style.position = 'fixed';
+            model.panel.style.maxHeight = '320px';
+            model.panel.style.overflowY = 'auto';
+            model.panel.style.zIndex = 70;
+            model.panel.addEventListener('click', function(evt){ evt.stopPropagation(); });
+            document.body.appendChild(model.panel);
+        }
+
+        if (model.toggle && !model.toggle.dataset.bound) {
+            model.toggle.dataset.bound = 'true';
+            model.toggle.addEventListener('click', function(evt){
+                evt.stopPropagation();
+                if (model.disabled) return;
+                if (model.open) closeSearchableSelect(selectId);
+                else openSearchableSelect(selectId);
             });
+        }
+
+        updateSearchableSummary(selectId);
+        updateSearchableToggleState(selectId);
+    }
+
+    function openSearchableSelect(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model || model.disabled) return;
+        if (ACTIVE_SEARCHABLE && ACTIVE_SEARCHABLE !== selectId) {
+            closeSearchableSelect(ACTIVE_SEARCHABLE);
+        }
+        var panel = model.panel;
+        if (!panel) return;
+        model.open = true;
+        ACTIVE_SEARCHABLE = selectId;
+        renderSearchablePanel(selectId);
+        panel.style.visibility = 'hidden';
+        panel.classList.remove('hidden');
+        positionSearchablePanel(selectId);
+        panel.style.visibility = '';
+        var searchInput = panel.querySelector('#' + selectId + '-search');
+        if (searchInput) {
+            searchInput.focus();
+            var len = searchInput.value.length;
+            try { searchInput.setSelectionRange(len, len); } catch(err) {}
+        }
+    }
+
+    function closeSearchableSelect(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var panel = model.panel;
+        model.open = false;
+        if (panel) panel.classList.add('hidden');
+        if (ACTIVE_SEARCHABLE === selectId) ACTIVE_SEARCHABLE = null;
+    }
+
+    function positionSearchablePanel(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var panel = model.panel;
+        var toggle = model.toggle;
+        if (!panel || !toggle || panel.classList.contains('hidden')) return;
+        var rect = toggle.getBoundingClientRect();
+        var desiredWidth = Math.max(rect.width, 240);
+        panel.style.minWidth = desiredWidth + 'px';
+        panel.style.maxWidth = '420px';
+        panel.style.width = Math.min(desiredWidth, 420) + 'px';
+        var panelWidth = panel.offsetWidth || Math.min(desiredWidth, 420);
+        var left = rect.left;
+        var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        if (left + panelWidth > viewportWidth - 16) {
+            left = Math.max(16, viewportWidth - panelWidth - 16);
+        }
+        panel.style.left = left + 'px';
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        var panelHeight = panel.offsetHeight;
+        var top = rect.bottom + 6;
+        if (panelHeight && (top + panelHeight > viewportHeight - 16)) {
+            if ((rect.top - 6) - panelHeight >= 16) {
+                top = rect.top - panelHeight - 6;
+            } else {
+                top = Math.max(16, viewportHeight - panelHeight - 16);
+            }
+        }
+        if (top < 16) top = 16;
+        panel.style.top = top + 'px';
+    }
+
+    function renderSearchablePanel(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model || !model.panel) return;
+        var searchId = selectId + '-search';
+        model.panel.innerHTML = '';
+        var searchInput = document.createElement('input');
+        searchInput.id = searchId;
+        searchInput.type = 'text';
+        searchInput.className = 'pill w-full px-3 py-2 mb-2 text-sm';
+        searchInput.placeholder = model.searchPlaceholder || 'Pesquisar...';
+        searchInput.value = model.searchTerm || '';
+        searchInput.addEventListener('input', function(){
+            model.searchTerm = this.value || '';
+            renderSearchableOptions(selectId);
+        });
+        model.panel.appendChild(searchInput);
+
+        var optionsHost = document.createElement('div');
+        optionsHost.id = selectId + '-options';
+        optionsHost.className = 'flex flex-col gap-1 max-h-72 overflow-auto pr-1';
+        model.panel.appendChild(optionsHost);
+
+        renderSearchableOptions(selectId);
+        positionSearchablePanel(selectId);
+    }
+
+    function renderSearchableOptions(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var container = byId(selectId + '-options');
+        if (!container) return;
+        var term = (model.searchTerm || '').toLowerCase();
+        var filtered = model.source.filter(function(opt){
+            return !term || String(opt).toLowerCase().indexOf(term) !== -1;
+        });
+        container.innerHTML = '';
+        if (!filtered.length) {
+            var empty = document.createElement('div');
+            empty.className = 'text-sm text-slate-400 px-2 py-3';
+            empty.textContent = 'Nenhum resultado encontrado.';
+            container.appendChild(empty);
+            positionSearchablePanel(selectId);
+            return;
+        }
+        filtered.forEach(function(opt){
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = opt;
+            btn.className = 'text-left w-full px-2 py-2 rounded-md text-sm transition-colors ' + (model.value === opt ? 'bg-slate-700/60 text-white' : 'text-slate-200 hover:bg-slate-700/50');
+            btn.addEventListener('click', function(){
+                setSearchableValue(selectId, opt, false);
+                closeSearchableSelect(selectId);
+            });
+            container.appendChild(btn);
+        });
+        positionSearchablePanel(selectId);
+    }
+
+    function updateSearchableSummary(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var summary = model.summary;
+        if (!summary) return;
+        var value = model.value;
+        summary.textContent = value ? value : (model.placeholder || '— selecione —');
+    }
+
+    function updateSearchableToggleState(selectId){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        var toggle = model.toggle;
+        if (toggle) {
+            toggle.disabled = !!model.disabled;
+            toggle.classList.toggle('opacity-60', !!model.disabled);
+            toggle.classList.toggle('cursor-not-allowed', !!model.disabled);
+        }
+        var summary = model.summary;
+        if (summary) {
+            if (model.disabled) {
+                summary.classList.remove('text-slate-300');
+                summary.classList.add('text-slate-400');
+            } else {
+                summary.classList.remove('text-slate-400');
+                summary.classList.add('text-slate-300');
+            }
         }
     }
 
@@ -307,59 +499,72 @@
         model.source = (options || []).slice();
         if (!preserveSearch) {
             model.searchTerm = '';
-            var input = byId(selectId + '-search');
-            if (input) input.value = '';
         }
-        renderSearchableSelect(selectId);
+        if (model.value && model.source.indexOf(model.value) === -1) {
+            setSearchableValue(selectId, '', true);
+        } else {
+            updateSearchableSummary(selectId);
+        }
+        if (model.open) {
+            renderSearchableOptions(selectId);
+        }
     }
 
-    function renderSearchableSelect(selectId){
+    function setSearchableValue(selectId, value, silent){
         var model = SELECT_MODELS[selectId];
-        var sel = byId(selectId);
-        if (!model || !sel) return;
-        var current = sel.value;
-        sel.innerHTML = '';
-        var searchTerm = (model.searchTerm || '').toLowerCase();
-        var filtered = model.source.filter(function(opt){
-            return !searchTerm || String(opt).toLowerCase().indexOf(searchTerm) !== -1;
-        });
-        if (model.placeholder !== null) {
-            var opt = document.createElement('option');
-            opt.value = '';
-            opt.textContent = model.placeholder || '— selecione —';
-            sel.appendChild(opt);
+        if (!model) return;
+        var normalized = value && model.source.indexOf(value) !== -1 ? value : '';
+        model.value = normalized;
+        if (model.hidden) {
+            model.hidden.value = normalized;
         }
-        filtered.forEach(function(optValue){
-            var option = document.createElement('option');
-            option.value = optValue;
-            option.textContent = optValue;
-            sel.appendChild(option);
-        });
-        if (current && filtered.indexOf(current) >= 0) {
-            sel.value = current;
-        } else {
-            sel.value = '';
+        updateSearchableSummary(selectId);
+        if (!silent && typeof model.onChange === 'function') {
+            model.onChange(normalized);
         }
+        if (model.open) {
+            renderSearchableOptions(selectId);
+        }
+    }
+
+    function getSearchableValue(selectId){
+        var model = SELECT_MODELS[selectId];
+        return model ? (model.value || '') : '';
+    }
+
+    function setSearchableOnChange(selectId, handler){
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        model.onChange = handler;
     }
 
     function setSearchableDisabled(selectId, disabled){
-        var sel = byId(selectId);
-        if (sel) sel.disabled = !!disabled;
-        var input = byId(selectId + '-search');
-        if (input) input.disabled = !!disabled;
+        var model = SELECT_MODELS[selectId];
+        if (!model) return;
+        model.disabled = !!disabled;
+        if (disabled) {
+            closeSearchableSelect(selectId);
+        }
+        updateSearchableToggleState(selectId);
     }
 
-    var BLOCK_SORT_FIELDS = [
-        { value: 'revenue', label: 'Receita' },
-        { value: 'impressions', label: 'Impressões' },
-        { value: 'clicks', label: 'Cliques' },
-        { value: 'ctr', label: 'CTR' },
-        { value: 'ecpm', label: 'eCPM' },
-        { value: 'requests', label: 'Solicitações' },
-        { value: 'coverage', label: 'Cobertura' },
-        { value: 'cpc', label: 'CPC' },
-        { value: 'page', label: 'Página (A-Z)' }
-    ];
+    document.addEventListener('click', function(evt){
+        if (!ACTIVE_SEARCHABLE) return;
+        var model = SELECT_MODELS[ACTIVE_SEARCHABLE];
+        if (!model) return;
+        var toggle = model.toggle;
+        var panel = model.panel;
+        if ((toggle && toggle.contains(evt.target)) || (panel && panel.contains(evt.target))) return;
+        closeSearchableSelect(ACTIVE_SEARCHABLE);
+    });
+
+    window.addEventListener('resize', function(){
+        if (ACTIVE_SEARCHABLE) positionSearchablePanel(ACTIVE_SEARCHABLE);
+    });
+
+    window.addEventListener('scroll', function(){
+        if (ACTIVE_SEARCHABLE) positionSearchablePanel(ACTIVE_SEARCHABLE);
+    }, true);
 
     function getBlockMetricValue(entry, metric){
         if (metric === 'page') return String(entry && entry.page ? entry.page : '');
@@ -390,17 +595,19 @@
         });
     }
 
-    function buildBlockSortControls(prefix, state){
-        var options = BLOCK_SORT_FIELDS.map(function(opt){
-            var selected = state && state.metric === opt.value ? ' selected' : '';
-            return '<option value="'+opt.value+'"'+selected+'>'+opt.label+'</option>';
-        }).join('');
-        var dirLabel = state && state.dir === 'asc' ? 'Ordem crescente' : 'Ordem decrescente';
-        return '<div class="flex flex-wrap items-center gap-3 text-sm text-slate-300">'
-            + '<label for="'+prefix+'-sort-field" class="text-xs uppercase tracking-wide text-slate-400">Ordenar blocos por</label>'
-            + '<select id="'+prefix+'-sort-field" class="pill rounded-lg px-3 py-1.5 text-sm">'+options+'</select>'
-            + '<button id="'+prefix+'-sort-dir" type="button" class="pill rounded-lg px-3 py-1.5 text-sm hover:text-white">'+dirLabel+'</button>'
-            + '</div>';
+    function blockSortIndicator(state, key){
+        if (!state || state.metric !== key) return '';
+        return state.dir === 'asc' ? ' ▲' : ' ▼';
+    }
+
+    function updateBlockSortState(state, key){
+        if (!state || !key) return;
+        if (state.metric === key) {
+            state.dir = (state.dir === 'asc') ? 'desc' : 'asc';
+        } else {
+            state.metric = key;
+            state.dir = (key === 'page') ? 'asc' : 'desc';
+        }
     }
 
     var CurrencyModal = { element: null, acceptButton: null, cancelButton: null, onAccept: null };
@@ -671,24 +878,6 @@
         });
 
         container.innerHTML = '';
-        var sortControls = document.createElement('div');
-        sortControls.className = 'flex flex-wrap items-center justify-end gap-3 mb-4';
-        sortControls.innerHTML = buildBlockSortControls('coord-block', COORD_BLOCK_SORT);
-        container.appendChild(sortControls);
-        var coordField = sortControls.querySelector('#coord-block-sort-field');
-        if (coordField) {
-            coordField.onchange = function(){
-                COORD_BLOCK_SORT.metric = this.value;
-                rerenderCoordination();
-            };
-        }
-        var coordDir = sortControls.querySelector('#coord-block-sort-dir');
-        if (coordDir) {
-            coordDir.onclick = function(){
-                COORD_BLOCK_SORT.dir = (COORD_BLOCK_SORT.dir === 'asc') ? 'desc' : 'asc';
-                rerenderCoordination();
-            };
-        }
         container.appendChild(frag);
     }
 
@@ -789,18 +978,26 @@
                     + '<td class="py-2 px-2 align-top">'+renderCoordinationSuggestionCell(item.suggestion)+'</td>'
                     + '</tr>';
             }).join('');
-            var head = '<thead class="text-slate-400"><tr>'
-                + '<th class="text-left py-2 px-2">Página</th>'
-                + '<th class="text-right py-2 px-2">Receita</th>'
-                + '<th class="text-right py-2 px-2">Impressões</th>'
-                + '<th class="text-right py-2 px-2">Cliques</th>'
-                + '<th class="text-right py-2 px-2">CTR</th>'
-                + '<th class="text-right py-2 px-2">eCPM</th>'
-                + '<th class="text-right py-2 px-2">Solicitações</th>'
-                + '<th class="text-right py-2 px-2">Cobertura</th>'
-                + '<th class="text-right py-2 px-2">CPC</th>'
-                + '<th class="text-left py-2 px-2">Sugestão de precificação</th>'
-                + '</tr></thead>';
+            var columns = [
+                { key: 'page', label: 'Página', align: 'left', sortable: true },
+                { key: 'revenue', label: 'Receita', align: 'right', sortable: true },
+                { key: 'impressions', label: 'Impressões', align: 'right', sortable: true },
+                { key: 'clicks', label: 'Cliques', align: 'right', sortable: true },
+                { key: 'ctr', label: 'CTR', align: 'right', sortable: true },
+                { key: 'ecpm', label: 'eCPM', align: 'right', sortable: true },
+                { key: 'requests', label: 'Solicitações', align: 'right', sortable: true },
+                { key: 'coverage', label: 'Cobertura', align: 'right', sortable: true },
+                { key: 'cpc', label: 'CPC', align: 'right', sortable: true },
+                { key: null, label: 'Sugestão de precificação', align: 'left', sortable: false }
+            ];
+            var head = '<thead class="text-slate-400"><tr>' + columns.map(function(col){
+                var alignClass = col.align === 'right' ? 'text-right' : 'text-left';
+                if (!col.sortable) {
+                    return '<th class="'+alignClass+' py-2 px-2">'+col.label+'</th>';
+                }
+                return '<th class="'+alignClass+' py-2 px-2 cursor-pointer select-none" onclick="sortBlocksBy(\'coord\', \'"
+                    + col.key + '\')">' + col.label + blockSortIndicator(COORD_BLOCK_SORT, col.key) + '</th>';
+            }).join('') + '</tr></thead>';
             return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+rows+'</tbody></table></div>';
         }
 
@@ -977,6 +1174,18 @@
     var CoordAccess = { granted: false, hash: '87402fdebedf4d5bf24d2f80aca3ae0197e8837d16a9c0155f366343c1f6a4bf', fallback: 'b10d26f7', pending: null, verifying: false };
     var SYNC_TIMERS = {};
 
+    function sortBlocksBy(context, key){
+        if (!key) return;
+        if (context === 'coord') {
+            updateBlockSortState(COORD_BLOCK_SORT, key);
+            rerenderCoordination();
+        } else {
+            updateBlockSortState(BLOCK_SORT, key);
+            if (LAST_RES) renderDashboard(LAST_RES);
+        }
+    }
+    window.sortBlocksBy = sortBlocksBy;
+
     function showToast(message, type = 'info') {
         const container = byId('toast-container');
         if (!container) return;
@@ -1044,38 +1253,48 @@
 
     function fillPessoa(list){
       setSearchableOptions('f-pessoa', list || []);
-      var pessoaSelect = byId('f-pessoa');
-      var operacaoSelect = byId('f-operacao');
+      var currentPessoa = getSearchableValue('f-pessoa');
+      if (currentPessoa && (!list || list.indexOf(currentPessoa) === -1)) {
+        setSearchableValue('f-pessoa', '', true);
+        currentPessoa = '';
+      }
 
       function applyOperacoes(pessoa){
         var ops = (CFG.opsByPessoa && pessoa) ? (CFG.opsByPessoa[pessoa] || []) : [];
         setSearchableOptions('f-operacao', ops || []);
-        setSearchableDisabled('f-operacao', !ops.length);
-        if (!ops.length && operacaoSelect) operacaoSelect.value = '';
-      }
-
-      if (pessoaSelect) {
-        var selectedPessoa = pessoaSelect.value;
-        pessoaSelect.onchange = function(){
-          var pessoa = this.value;
-          applyOperacoes(pessoa);
-          resetPQ();
-        };
-        if (selectedPessoa && list && list.indexOf(selectedPessoa) === -1) {
-          pessoaSelect.value = '';
-          selectedPessoa = '';
+        var hasOps = ops && ops.length;
+        setSearchableDisabled('f-operacao', !hasOps);
+        if (!hasOps) {
+          setSearchableValue('f-operacao', '', true);
+          setPQOptions([]);
+        } else {
+          var currentOp = getSearchableValue('f-operacao');
+          if (ops.indexOf(currentOp) === -1) {
+            setSearchableValue('f-operacao', '', true);
+          }
         }
-        applyOperacoes(selectedPessoa);
-      } else {
-        applyOperacoes('');
       }
 
-      if (operacaoSelect) {
-        operacaoSelect.onchange = function(){
-          var key = byId('f-pessoa').value + '||' + this.value;
-          var pags = (CFG.paginasByOp && CFG.paginasByOp[key]) ? CFG.paginasByOp[key] : [];
-          setPQOptions(pags);
-        };
+      setSearchableOnChange('f-pessoa', function(value){
+        applyOperacoes(value);
+        resetPQ();
+      });
+
+      setSearchableOnChange('f-operacao', function(value){
+        var pessoa = getSearchableValue('f-pessoa');
+        var key = pessoa + '||' + value;
+        var pags = (CFG.paginasByOp && CFG.paginasByOp[key]) ? CFG.paginasByOp[key] : [];
+        setPQOptions(pags);
+      });
+
+      applyOperacoes(currentPessoa);
+      var currentOperacao = getSearchableValue('f-operacao');
+      if (currentPessoa && currentOperacao) {
+        var initKey = currentPessoa + '||' + currentOperacao;
+        var initPags = (CFG.paginasByOp && CFG.paginasByOp[initKey]) ? CFG.paginasByOp[initKey] : [];
+        if (initPags.length) {
+          setPQOptions(initPags);
+        }
       }
 
       var coordSel = byId('coord-pessoa');
@@ -1272,11 +1491,11 @@
 
     function wireFilters(){
       byId('btn-aplicar').onclick = function(){
-        var params = { pessoa: byId('f-pessoa').value, operacao: byId('f-operacao').value, paginasSelecionadas: PQ.selected.slice(),
+        var params = { pessoa: getSearchableValue('f-pessoa'), operacao: getSearchableValue('f-operacao'), paginasSelecionadas: PQ.selected.slice(),
                        startDate: byId('f-start').value || '', endDate: byId('f-end').value || '', granularity: byId('f-gran').value || 'hour' };
-        if (!params.pessoa || !params.operacao || !params.paginasSelecionadas.length) { 
-            showToast('Selecione Pessoa, Operação e pelo menos uma Página de Queda.', 'error'); 
-            return; 
+        if (!params.pessoa || !params.operacao || !params.paginasSelecionadas.length) {
+            showToast('Selecione Pessoa, Operação e pelo menos uma Página de Queda.', 'error');
+            return;
         }
         google.script.run.withSuccessHandler(renderDashboard).getDashboardData(params);
       };
@@ -1340,17 +1559,22 @@
             + '<td class="py-2 pr-2 text-right">'+money(m.cpc,3)+'</td>'
             + '</tr>';
         }).join('');
-        var head = '<thead class="text-slate-400"><tr>'
-          + '<th class="text-left py-2 pr-2">Página</th>'
-          + '<th class="text-right py-2 pr-2">Receita</th>'
-          + '<th class="text-right py-2 pr-2">Impressões</th>'
-          + '<th class="text-right py-2 pr-2">Cliques</th>'
-          + '<th class="text-right py-2 pr-2">CTR</th>'
-          + '<th class="text-right py-2 pr-2">eCPM</th>'
-          + '<th class="text-right py-2 pr-2">Solicitações</th>'
-          + '<th class="text-right py-2 pr-2">Cobertura</th>'
-          + '<th class="text-right py-2 pr-2">CPC</th>'
-          + '</tr></thead>';
+        var columns = [
+          { key: 'page', label: 'Página', align: 'left' },
+          { key: 'revenue', label: 'Receita', align: 'right' },
+          { key: 'impressions', label: 'Impressões', align: 'right' },
+          { key: 'clicks', label: 'Cliques', align: 'right' },
+          { key: 'ctr', label: 'CTR', align: 'right' },
+          { key: 'ecpm', label: 'eCPM', align: 'right' },
+          { key: 'requests', label: 'Solicitações', align: 'right' },
+          { key: 'coverage', label: 'Cobertura', align: 'right' },
+          { key: 'cpc', label: 'CPC', align: 'right' }
+        ];
+        var head = '<thead class="text-slate-400"><tr>' + columns.map(function(col){
+          var alignClass = col.align === 'right' ? 'text-right' : 'text-left';
+          return '<th class="'+alignClass+' py-2 pr-2 cursor-pointer select-none" onclick="sortBlocksBy(\'cmp\', \'
+            + col.key + '\')">' + col.label + blockSortIndicator(BLOCK_SORT, col.key) + '</th>';
+        }).join('') + '</tr></thead>';
         return '<div class="overflow-auto"><table class="w-full text-sm">'+head+'<tbody>'+body+'</tbody></table></div>';
       }
 
@@ -1400,24 +1624,8 @@
       cmpb.className = 'card rounded-2xl p-5 space-y-6';
       cmpb.innerHTML = '<div class="flex flex-wrap items-center justify-between gap-3">'
         + '<h3 class="text-lg font-bold text-slate-100">Comparativo por Blocos</h3>'
-        + buildBlockSortControls('cmp-block', BLOCK_SORT)
         + '</div>'
         + '<div class="space-y-6">'+content+'</div>';
-
-      var sortField = cmpb.querySelector('#cmp-block-sort-field');
-      if (sortField) {
-        sortField.onchange = function(){
-          BLOCK_SORT.metric = this.value;
-          if (LAST_RES) renderDashboard(LAST_RES);
-        };
-      }
-      var sortDir = cmpb.querySelector('#cmp-block-sort-dir');
-      if (sortDir) {
-        sortDir.onclick = function(){
-          BLOCK_SORT.dir = (BLOCK_SORT.dir === 'asc') ? 'desc' : 'asc';
-          if (LAST_RES) renderDashboard(LAST_RES);
-        };
-      }
       return cmpb;
     }
 
